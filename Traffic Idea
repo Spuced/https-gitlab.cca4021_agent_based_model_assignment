@@ -1,0 +1,8 @@
+Square Matrix
+
+0 is non-roads
+1 is normal roads
+2 is a bus route
+
+Cars can go anywhere, but are blocked by other cars
+Buses can take n pedestrians, but go along a fixed route
