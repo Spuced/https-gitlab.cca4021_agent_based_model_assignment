@@ -9,6 +9,7 @@ wall = 1
 exit = 2
 grid_size = 50
 cell_size = 16  # Adjust the size of each cell
+center_of_mass_radius = 10  # Radius to consider for calculating local center of mass
 
 # Grid setup
 grid = [[wall if i == 0 or i == grid_size - 1 or j == 0 or j == grid_size - 1 else open_space for j in range(grid_size)] for i in range(grid_size)]
@@ -56,16 +57,12 @@ class Follower:
         self.x = random.randint(1, grid_size - 2)
         self.y = random.randint(1, grid_size - 2)
 
-    def follow_leader(self, leader):
-        potential_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        moves = []
-        [moves.append(np.sqrt(((leader.x-(self.x+move_x))**2 + (leader.y-(self.y+move_y))**2))) for move_x, move_y in potential_moves]
-        dist = min(moves)
-        index = moves.index(dist)
-        move = potential_moves[index]
-        move_x, move_y = move
-        new_x = self.x + move_x
-        new_y = self.y + move_y
+    def follow_local_center_of_mass(self, leaders, followers):
+        center_x, center_y = self.calculate_local_center_of_mass(leaders, followers)
+        move_x = np.sign(center_x - self.x)
+        move_y = np.sign(center_y - self.y)
+        new_x = int(self.x + move_x)
+        new_y = int(self.y + move_y)
         if 0 <= new_x < grid_size and 0 <= new_y < grid_size:
             if grid[new_x][new_y] == exit:
                 return True
@@ -74,6 +71,29 @@ class Follower:
                 self.y = new_y
         return False
 
+    def calculate_local_center_of_mass(self, leaders, followers):
+        total_mass = 1  # Initialize with own position
+        center_x = self.x
+        center_y = self.y
+
+        for leader in leaders:
+            if abs(leader.x - self.x) <= center_of_mass_radius and abs(leader.y - self.y) <= center_of_mass_radius:
+                total_mass += 1
+                center_x += leader.x
+                center_y += leader.y
+
+        for follower in followers:
+            if abs(follower.x - self.x) <= center_of_mass_radius and abs(follower.y - self.y) <= center_of_mass_radius:
+                total_mass += 1
+                center_x += follower.x
+                center_y += follower.y
+
+        if total_mass > 1:  # Avoid division by zero
+            return center_x / total_mass, center_y / total_mass
+        else:
+            return self.x, self.y
+
+
 def initialise():
     global leaders, followers
     leaders = [FireWarden() for _ in range(2)]
@@ -81,13 +101,21 @@ def initialise():
 
 
 def update():
+    global leaders, followers
+    updated_leaders = []
     for leader in leaders:
-            if not leader.move():
-                leader
+        if not leader.move():
+            updated_leaders.append(leader)
+    leaders = updated_leaders
+
+    updated_followers = []
     for follower in followers:
-        closest_leader = min(leaders, key=lambda leader: np.sqrt((leader.x - follower.x)**2 + (leader.y - follower.y)**2))
-        if not follower.follow_leader(closest_leader):
-            follower
+        if not follower.follow_local_center_of_mass(leaders, followers):
+            if grid[follower.x][follower.y] == exit:
+                continue
+            updated_followers.append(follower)
+    followers = updated_followers
+
 
 def draw_grid(canvas):
     for i in range(grid_size):
@@ -100,6 +128,7 @@ def draw_grid(canvas):
         canvas.create_oval(leader.y * cell_size, leader.x * cell_size, (leader.y + 1) * cell_size, (leader.x + 1) * cell_size, fill='red')
     for follower in followers:
         canvas.create_oval(follower.y * cell_size, follower.x * cell_size, (follower.y + 1) * cell_size, (follower.x + 1) * cell_size, fill='blue')
+
 
 def animate():
     update()
