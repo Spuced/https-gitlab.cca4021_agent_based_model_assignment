@@ -1,5 +1,6 @@
 import tkinter as tk
 import random
+from collections import deque
 
 # Constants
 open_space = 0
@@ -31,14 +32,54 @@ class Panicker:
                     self.y = new_y
                     break
         return False
+    
+class FireWarden:
+    def __init__(self):
+        self.x = random.randint(1, grid_size - 2)
+        self.y = random.randint(1, grid_size - 2)
+        self.path_to_exit = None  # Initialize path_to_exit attribute
+
+    def move(self):
+        if not self.path_to_exit:
+            self.path_to_exit = self.find_path_to_exit()
+
+        if self.path_to_exit:
+            self.x, self.y = self.path_to_exit.pop(0)
+            if grid[self.x][self.y] == exit:
+                return True
+        return False
+
+    def find_path_to_exit(self):
+        visited = [[False for _ in range(grid_size)] for _ in range(grid_size)]
+        queue = deque([(self.x, self.y, [])])
+
+        while queue:
+            x, y, path = queue.popleft()
+            if grid[x][y] == exit:
+                return path
+
+            visited[x][y] = True
+
+            for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny] and grid[nx][ny] != wall:
+                    queue.append((nx, ny, path + [(nx, ny)]))
+                    visited[nx][ny] = True
+
+        return []
+
 
 def initialise():
     global panickers
+    global fire_wardens
     panickers = [Panicker() for _ in range(100)]
+    fire_wardens = [FireWarden() for _ in range(100)]
 
 def update():
     global panickers
+    global fire_wardens
     panickers = [panicker for panicker in panickers if not panicker.move()]
+    fire_wardens = [fire_warden for fire_warden in fire_wardens if not fire_warden.move()]
 
 def draw_grid(canvas):
     for i in range(grid_size):
@@ -49,12 +90,14 @@ def draw_grid(canvas):
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='green')
     for panicker in panickers:
         canvas.create_oval(panicker.y * cell_size, panicker.x * cell_size, (panicker.y + 1) * cell_size, (panicker.x + 1) * cell_size, fill='red')
+    for fire_warden in fire_wardens:
+        canvas.create_oval(fire_warden.y * cell_size, fire_warden.x * cell_size, (fire_warden.y + 1) * cell_size, (fire_warden.x + 1) * cell_size, fill='green')
 
 def animate():
     update()
     canvas.delete("all")
     draw_grid(canvas)
-    canvas.after(10, animate)  # Adjust the animation speed by changing the delay time
+    canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
 
 # Tkinter setup
 initialise()
