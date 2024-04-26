@@ -29,8 +29,8 @@ def initialise():
     global leaders, followers, width, height
     width = 100
     height = 100
-    leaders = [Leader(np.random.uniform(0, width), np.random.uniform(0, height), np.random.uniform(-1, 1, 2)) for _ in range(5)]
-    followers = [Follower(np.random.uniform(0, width), np.random.uniform(0, height)) for _ in range(50)]
+    leaders = [Leader(np.random.uniform(0, width), np.random.uniform(0, height), np.random.uniform(-1, 1, 2)) for _ in range(50)]
+    followers = [Follower(np.random.uniform(0, width), np.random.uniform(0, height)) for _ in range(300)]
 
 def observe():
     plt.clf()
