@@ -8,7 +8,7 @@ open_space = 0
 wall = 1
 exit = 2
 grid_size = 100
-cell_size = 16  # Adjust the size of each cell
+cell_size = 8  # Adjust the size of each cell
 
 grid = layout()
 
