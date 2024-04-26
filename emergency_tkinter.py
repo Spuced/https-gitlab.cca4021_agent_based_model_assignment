@@ -2,7 +2,7 @@ import tkinter as tk
 import random
 from collections import deque
 
-# Constants
+# Simulation Properties
 open_space = 0
 wall = 1
 exit = 2
@@ -10,13 +10,53 @@ grid_size = 100
 cell_size = 16  # Adjust the size of each cell
 
 # Grid setup
+
+# Set the outside wall
 grid = [[wall if i == 0 or i == grid_size - 1 or j == 0 or j == grid_size - 1 else open_space for j in range(grid_size)] for i in range(grid_size)]
-grid[0][49:51] = [exit, exit]  # Define exit positions
+
+# Create the 4 office walls
+for i in range(0, 46):
+    for j in [45, 55]:
+        grid[i][j] = wall
+        grid[i][j] = wall
+        grid[j][i] = wall
+        grid[j][i] = wall
+
+for i in range(55, 100):
+    for j in [45, 55]:
+        grid[i][j] = wall
+        grid[i][j] = wall
+        grid[j][i] = wall
+        grid[j][i] = wall
+
+# Create the internal doors
+grid[45][24:26] = open_space, open_space
+grid[55][24:26] = open_space, open_space
+grid[45][75:77] = open_space, open_space
+grid[55][75:77] = open_space, open_space
+
+for row in range(24, 26):
+    grid[row][45] = open_space
+    grid[row][55] = open_space
+
+for row in range(75, 77):
+    grid[row][45] = open_space
+    grid[row][55] = open_space
+
+# Set the exits
+for i in range(49, 51):
+    grid[0][i] = exit  # Top
+    grid[99][i] = exit # Bottom
+    grid[i][0] = exit  # Left
+    grid[i][99] = exit  # Right
 
 class Panicker:
     def __init__(self):
-        self.x = random.randint(1, grid_size - 2)
-        self.y = random.randint(1, grid_size - 2)
+        while True:
+            self.x = random.randint(1, grid_size - 2)
+            self.y = random.randint(1, grid_size - 2)
+            if grid[self.x][self.y] == open_space:
+                break
 
     def move(self):
         potential_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -35,8 +75,11 @@ class Panicker:
     
 class FireWarden:
     def __init__(self):
-        self.x = random.randint(1, grid_size - 2)
-        self.y = random.randint(1, grid_size - 2)
+        while True:
+            self.x = random.randint(1, grid_size - 2)
+            self.y = random.randint(1, grid_size - 2)
+            if grid[self.x][self.y] == open_space:
+                break
         self.path_to_exit = None  # Initialize path_to_exit attribute
 
     def move(self):
@@ -67,7 +110,6 @@ class FireWarden:
                     visited[nx][ny] = True
 
         return []
-
 
 def initialise():
     global panickers
