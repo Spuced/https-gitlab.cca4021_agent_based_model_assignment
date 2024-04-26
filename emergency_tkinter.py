@@ -2,7 +2,7 @@ import tkinter as tk
 import random
 from collections import deque
 
-# Constants
+# Simulation Properties
 open_space = 0
 wall = 1
 exit = 2
@@ -10,8 +10,27 @@ grid_size = 100
 cell_size = 16  # Adjust the size of each cell
 
 # Grid setup
+
+# Set the outside wall
 grid = [[wall if i == 0 or i == grid_size - 1 or j == 0 or j == grid_size - 1 else open_space for j in range(grid_size)] for i in range(grid_size)]
-grid[0][49:51] = [exit, exit]  # Define exit positions
+
+# Set the inside walls
+for i in range(0, 99):
+    for j in range (0, 99, 10):
+        grid[i][j] = wall
+        grid[i][j] = wall
+
+for i in range(0, 99):
+    for j in range (0, 99, 10):
+        grid[j][i] = wall
+        grid[j][i] = wall
+
+# Set the exits
+for i in range(49, 51):
+    # grid[0][i] = exit  # Top
+    # grid[99][i] = exit # Bottom
+    grid[i][0] = exit  # Left
+    # grid[i][99] = exit  # Right
 
 class Panicker:
     def __init__(self):
