@@ -39,9 +39,28 @@ for row in range(24, 26):
     grid[row][45] = open_space
     grid[row][55] = open_space
 
-for row in range(75, 77):
+for row in range(76, 78):
     grid[row][45] = open_space
     grid[row][55] = open_space
+
+# Create the desks
+for i in range(10, 35):
+    for j in range(7, 38, 10):
+        grid[i][j] = wall
+        grid[i][j] = wall
+
+    for j in range(63, 99, 10):
+        grid[i][j] = wall
+        grid[i][j] = wall
+
+for i in range(65, 90):
+    for j in range(7, 38, 10):
+        grid[i][j] = wall
+        grid[i][j] = wall
+
+    for j in range(63, 99, 10):
+        grid[i][j] = wall
+        grid[i][j] = wall
 
 # Set the exits
 for i in range(49, 51):
@@ -50,6 +69,7 @@ for i in range(49, 51):
     grid[i][0] = exit  # Left
     grid[i][99] = exit  # Right
 
+# Creating classes for each agent type
 class Panicker:
     def __init__(self):
         while True:
@@ -80,7 +100,7 @@ class FireWarden:
             self.y = random.randint(1, grid_size - 2)
             if grid[self.x][self.y] == open_space:
                 break
-        self.path_to_exit = None  # Initialize path_to_exit attribute
+        self.path_to_exit = None  # Initialise path_to_exit attribute
 
     def move(self):
         if not self.path_to_exit:
