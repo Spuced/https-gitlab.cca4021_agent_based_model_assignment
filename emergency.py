@@ -1,44 +1,45 @@
-import pycxsimulator
-from pylab import *
+import numpy as np
+import matplotlib.pyplot as plt
 
-n = 1000  # number of agents
-exits = [(0.95, 0.5)]  # location of exits, here one exit at middle of the right wall
-speed = 0.01  # maximum movement speed of an agent per step
+# Create the floor plan
+open_space = 0
+wall = 1
+exit = 2
 
-class agent:
-    pass
+# Create the grid
+grid_size = 100
+grid = np.zeros((grid_size, grid_size), dtype=int)
 
-def initialize():
-    global agents
-    agents = []
-    for i in range(n):
-        ag = agent()
-        ag.x = random() * 0.9  # ensure agents start inside the building
-        ag.y = random()
-        agents.append(ag)
-    
-def observe():
-    global agents
-    cla()
-    scatter([ag.x for ag in agents], [ag.y for ag in agents], color='b', s=8)
-    scatter([e[0] for e in exits], [e[1] for e in exits], color='r', s=40, marker='s')
-    axis('image')
-    axis([0, 1, 0, 1])
-    title('Evacuation Model')
+# Set the walls
+grid[0, :] = wall
+grid[:, 0] = wall
+grid[99, :] = wall
+grid[:, 99] = wall
 
-def update():
-    global agents
-    for ag in agents:
-        closest_exit = min(exits, key=lambda e: (ag.x - e[0])**2 + (ag.y - e[1])**2)
-        move_toward_exit(ag, closest_exit)
+# Set the exit
+grid[0, 49:51] = exit
 
-def move_toward_exit(ag, exit):
-    # Calculate vector toward the exit
-    vec_x, vec_y = exit[0] - ag.x, exit[1] - ag.y
-    distance = sqrt(vec_x**2 + vec_y**2)
-    step_x, step_y = speed * vec_x / distance, speed * vec_y / distance
 
-    # Update position
-    ag.x, ag.y = ag.x + step_x, ag.y + step_y
+# Plot the office
+plt.figure(figsize=(10, 10))
+plt.imshow(grid, cmap='Greys')
+plt.colorbar(label='Cell Type')
 
-pycxsimulator.GUI().start(func=[initialize, observe, update])
+# Enhance the plot
+plt.title('Office Floor Plan')
+plt.axis('off')  # Turn off axis numbering
+plt.show()
+
+# Default Class
+class panickers:
+    def __init__(self, grid):
+        
+        # Randomly place a panicker in an open space
+        placed = False
+        while not placed:
+            x = random.randint(1, grid_size - 2)
+            y = random.randint(1, grid_size - 2)
+            if grid[x, y] == open_space:
+                self.x = x
+                self.y = y
+                placed = True
