@@ -42,6 +42,7 @@ class Panicker:
                 if clear_path:
                     potential_moves = [(dx, 0), (0, dy)]
                 break
+            
         random.shuffle(potential_moves)
         for move_x, move_y in potential_moves:
             new_x, new_y = self.x + move_x, self.y + move_y

@@ -7,6 +7,7 @@ from create_office import layout
 open_space = 0
 wall = 1
 exit = 2
+fire = 3
 grid_size = 100
 cell_size = 8  # Adjust the size of each cell
 
@@ -76,46 +77,89 @@ class FireWarden:
 
     def move(self):
         global escaped_wardens
-        if not self.path_to_exit:
+        if not self.path_to_exit or self.is_path_blocked(self.path_to_exit):
             self.path_to_exit = self.find_path_to_exit()
 
         if self.path_to_exit:
             self.x, self.y = self.path_to_exit.pop(0)
             if grid[self.x][self.y] == exit:
                 escaped_wardens += 1
+                return True  # The warden escapes
+        return False  # The warden does not escape
+
+    def is_path_blocked(self, path):
+        for x, y in path:
+            if grid[x][y] in (fire, wall):  # Assuming fire and wall are treated similarly as obstacles
                 return True
         return False
 
     def find_path_to_exit(self):
         visited = [[False for _ in range(grid_size)] for _ in range(grid_size)]
         queue = deque([(self.x, self.y, [])])
-
         while queue:
             x, y, path = queue.popleft()
             if grid[x][y] == exit:
                 return path
 
             visited[x][y] = True
-
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 nx, ny = x + dx, y + dy
-                if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny] and grid[nx][ny] != wall:
+                if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny] and grid[nx][ny] != wall and grid[nx][ny] != fire:
                     queue.append((nx, ny, path + [(nx, ny)]))
                     visited[nx][ny] = True
 
         return []
 
+class Fire:
+
+    def __init__(self):
+        while True:
+            self.x = random.randint(1, grid_size - 2)
+            self.y = random.randint(1, grid_size - 2)
+            if grid[self.x][self.y] == open_space:
+                grid[self.x][self.y] = fire  # Place fire on the grid
+                break
+
+    def place_at(self, x, y):
+        self.x, self.y = x, y
+        grid[self.x][self.y] = fire  # Place fire on the grid
+        return self
+
+    def spread(self):
+        if random.random() < 1:  # Correcting the spread chance to 20%
+            spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+            random.shuffle(spread_moves)
+            new_fires = []  # Store new fire locations before updating the grid
+            for move_x, move_y in spread_moves:
+                new_x = self.x + move_x
+                new_y = self.y + move_y
+                if 0 <= new_x < grid_size and 0 <= new_y < grid_size:
+                    if grid[new_x][new_y] == open_space:
+                        new_fires.append((new_x, new_y))
+                        break  # Only spread to one new cell at a time
+
+            return new_fires
+        return []  # No spread occurred
+
 def initialise():
-    global panickers, fire_wardens, escaped_panickers, escaped_wardens
+    global panickers, fire_wardens, fires, escaped_panickers, escaped_wardens
     panickers = [Panicker() for _ in range(100)]
     fire_wardens = [FireWarden() for _ in range(100)]
+    fires = [Fire() for _ in range(1)]
+
     escaped_panickers = 0
     escaped_wardens = 0
 
 def update():
-    global panickers, fire_wardens
+    global panickers, fire_wardens, fires
     panickers = [panicker for panicker in panickers if not panicker.move()]
     fire_wardens = [fire_warden for fire_warden in fire_wardens if not fire_warden.move()]
+
+    new_fires = []
+    for fire in fires:
+        new_fires.extend(fire.spread())
+    for (nx, ny) in new_fires:
+        fires.append(Fire().place_at(nx, ny))  # Add new fire instances based on spread locations
 
 def draw_grid(canvas):
     for i in range(grid_size):
@@ -128,6 +172,8 @@ def draw_grid(canvas):
         canvas.create_oval(panicker.y * cell_size, panicker.x * cell_size, (panicker.y + 1) * cell_size, (panicker.x + 1) * cell_size, fill='red')
     for fire_warden in fire_wardens:
         canvas.create_oval(fire_warden.y * cell_size, fire_warden.x * cell_size, (fire_warden.y + 1) * cell_size, (fire_warden.x + 1) * cell_size, fill='green')
+    for fire in fires:
+        canvas.create_rectangle(fire.y * cell_size, fire.x * cell_size, (fire.y + 1) * cell_size, (fire.x + 1) * cell_size, fill='orange')
 
 def animate():
     update()
