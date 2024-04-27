@@ -16,27 +16,36 @@ class FireWarden:
         while True:
             self.x = random.randint(1, grid_size - 2)
             self.y = random.randint(1, grid_size - 2)
-            if grid[self.x][self.y] == open_space:
+            if grid[self.x][self.y] == open_space and (self.x, self.y) not in occupied_positions:
+                occupied_positions.add((self.x, self.y))
                 break
         self.path_to_exit = None
 
     def move(self):
-        global escaped_wardens, dead_wardens
+        global escaped_wardens, dead_wardens, occupied_positions
 
-        # They die if they touch fire
         if grid[self.x][self.y] == fire:
             dead_wardens += 1
+            occupied_positions.remove((self.x, self.y))
             return True
 
-        steps_to_check = 10  # Check the next n steps
+        steps_to_check = 10
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
-
+            
         if self.path_to_exit:
-            self.x, self.y = self.path_to_exit.pop(0)
-            if grid[self.x][self.y] == exit:
-                escaped_wardens += 1
-                return True
+            next_x, next_y = self.path_to_exit[0]  # Peek the next position without removing it
+            if (next_x, next_y) not in occupied_positions:
+                self.path_to_exit.pop(0)  # Remove the position as we are about to move there
+                occupied_positions.remove((self.x, self.y))
+                self.x, self.y = next_x, next_y
+                occupied_positions.add((self.x, self.y))
+
+                if grid[self.x][self.y] == exit:
+                    escaped_wardens += 1
+                    occupied_positions.remove((self.x, self.y))
+                    return True
+                
         return False
 
     def is_path_blocked(self, path, n):
@@ -90,7 +99,9 @@ class Fire:
         return []
 
 def initialise():
-    global fire_wardens, fires, escaped_wardens, dead_wardens
+    global fire_wardens, fires, escaped_wardens, dead_wardens, occupied_positions
+
+    occupied_positions = set() 
     fire_wardens = [FireWarden() for _ in range(100)]
     fires = [Fire() for _ in range(1)]
 
@@ -100,6 +111,7 @@ def initialise():
 def update():
     global fire_wardens, fires
     fire_wardens = [warden for warden in fire_wardens if not warden.move()]
+    
     new_fires = []
     for fire in fires:
         new_fires.extend(fire.spread())
@@ -137,7 +149,7 @@ canvas.pack()
 warden_label = tk.Label(root, text="Wardens Escaped: 0")
 warden_label.pack()
 
-dead_label = tk.Label(root, text="Wardens Died: 0")
+dead_label = tk.Label(root, text="Wardens Escaped: 0")
 dead_label.pack()
 
 # Start animation
