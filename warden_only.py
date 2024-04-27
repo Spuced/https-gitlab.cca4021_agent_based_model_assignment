@@ -21,8 +21,14 @@ class FireWarden:
         self.path_to_exit = None
 
     def move(self):
-        global escaped_wardens
-        steps_to_check = 5  # Check the next 5 steps; adjust this value as needed
+        global escaped_wardens, dead_wardens
+
+        # They die if they touch fire
+        if grid[self.x][self.y] == fire:
+            dead_wardens += 1
+            return True
+
+        steps_to_check = 10  # Check the next n steps
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
 
@@ -58,7 +64,6 @@ class FireWarden:
                         visited[nx][ny] = True
         return []
 
-
 class Fire:
     def __init__(self, x=None, y=None):
         if x is None or y is None:
@@ -72,7 +77,7 @@ class Fire:
             grid[self.x][self.y] = fire
 
     def spread(self):
-        if random.random() < 0.6:
+        if random.random() < 0.5:
             spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
             random.shuffle(spread_moves)
             new_fires = set()
@@ -85,12 +90,12 @@ class Fire:
         return []
 
 def initialise():
-    global panickers, fire_wardens, fires, escaped_wardens
+    global fire_wardens, fires, escaped_wardens, dead_wardens
     fire_wardens = [FireWarden() for _ in range(100)]
     fires = [Fire() for _ in range(1)]
 
-    escaped_panickers = 0
     escaped_wardens = 0
+    dead_wardens = 0
 
 def update():
     global fire_wardens, fires
@@ -119,8 +124,8 @@ def animate():
     canvas.delete("all")
     draw_grid(canvas)
     warden_label.config(text="Wardens Escaped: " + str(escaped_wardens))
+    dead_label.config(text="Wardens Died: " + str(dead_wardens))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
-
 
 # Tkinter setup
 initialise()
@@ -131,6 +136,9 @@ canvas.pack()
 
 warden_label = tk.Label(root, text="Wardens Escaped: 0")
 warden_label.pack()
+
+dead_label = tk.Label(root, text="Wardens Died: 0")
+dead_label.pack()
 
 # Start animation
 animate()
