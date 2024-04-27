@@ -12,7 +12,9 @@ cell_size = 8  # Adjust the size of each cell
 
 grid = layout()
 
-class FireWarden:
+class Workers:
+
+    # Place them randomly in open space
     def __init__(self):
         while True:
             self.x = random.randint(1, grid_size - 2)
@@ -25,19 +27,18 @@ class FireWarden:
         self.path_to_exit = None
         self.panic = 1 if random.random() < 0.4 else 0  # Initial panic state
 
-    def move(self):
-        global escaped_wardens, dead_wardens, occupied_positions
+    def worker_update(self):
+        global escaped_workers, occupied_positions
 
-        # They die if they touch fire
-        if grid[self.x][self.y] == fire:
-            occupied_positions.remove((self.x, self.y))
-            dead_wardens += 1
+        # Do nothing if they die
+        if self.die():
             return True
         
-        steps_to_check = 5  # Check the next 5 steps; adjust this value as needed
+        steps_to_check = 10  # Check the next n steps for fire
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
 
+        # Make them calm if they see the exit
         if self.should_change_panic():
             self.panic = 1 - self.panic  # Change panic state
 
@@ -45,19 +46,25 @@ class FireWarden:
         if self.distance_to_exit() <= 5:
             self.panic = 0  # Set panic state to calm if exit is within 5 units
 
+        # They shold move randomly if panicked
         if self.panic:
             self.move_randomly()
+
+        # If calm move along the path to the exit
         else:
             if self.path_to_exit:
                 next_x, next_y = self.path_to_exit[0]  # Peek the next position without removing it
+
+                # If it is free move them along their path
                 if (next_x, next_y) not in occupied_positions:
                     self.path_to_exit.pop(0)  # Remove the position as we are about to move there
                     occupied_positions.remove((self.x, self.y))
                     self.x, self.y = next_x, next_y
                     occupied_positions.add((self.x, self.y))
 
+                    # If they reach an exit they can be removed
                     if grid[self.x][self.y] == exit:
-                        escaped_wardens += 1
+                        escaped_workers += 1
                         occupied_positions.remove((self.x, self.y))
                         return True
         return False
@@ -70,10 +77,19 @@ class FireWarden:
 
     def get_nearby_agents(self):
         nearby_agents = []
-        for warden in fire_wardens:
-            if warden != self and abs(warden.x - self.x) <= 5 and abs(warden.y - self.y) <= 5:
-                nearby_agents.append(warden)
+        for worker in workers:
+            if worker != self and abs(worker.x - self.x) <= 5 and abs(worker.y - self.y) <= 5:
+                nearby_agents.append(worker)
         return nearby_agents
+    
+    # They die if they touch fire
+    def die(self):
+
+        global dead_workers, occupied_positions
+        if grid[self.x][self.y] == fire:
+            occupied_positions.remove((self.x, self.y))
+            dead_workers += 1
+            return True
 
     def distance_to_exit(self):
         exits = self.find_exit_coordinates()
@@ -99,10 +115,10 @@ class FireWarden:
                 occupied_positions.add((self.x, self.y))
                 break
 
+    # Check up to n steps in the path for fire
     def is_path_blocked(self, path, n):
-        # Check up to n steps in the path for obstacles
         for x, y in path[:n]:
-            if grid[x][y] in (fire, wall):
+            if grid[x][y] == fire:
                 return True
         return False
 
@@ -124,9 +140,9 @@ class FireWarden:
                         visited[nx][ny] = True
         return []
 
-
-
 class Fire:
+
+    # Create a fire randomly in the grid
     def __init__(self, x=None, y=None):
         if x is None or y is None:
             while True:
@@ -138,6 +154,7 @@ class Fire:
             self.x, self.y = x, y
             grid[self.x][self.y] = fire
 
+    # The fire spreads randomly into an adjacent tile
     def spread(self):
         if random.random() < 0.6:
             spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -152,18 +169,19 @@ class Fire:
         return []
 
 def initialise():
-    global fire_wardens, fires, escaped_wardens, dead_wardens, occupied_positions
+    global workers, fires, escaped_workers, dead_workers, occupied_positions
 
     occupied_positions = set() 
-    fire_wardens = [FireWarden() for _ in range(1000)]
+    workers = [Workers() for _ in range(1000)]
     fires = [Fire() for _ in range(1)]
 
-    escaped_wardens = 0
-    dead_wardens = 0
+    escaped_workers = 0
+    dead_workers = 0
 
 def update():
-    global fire_wardens, fires
-    fire_wardens = [warden for warden in fire_wardens if not warden.move()]
+    global workers, fires
+    workers = [worker for worker in workers if not worker.worker_update()]
+
     new_fires = []
     for fire in fires:
         new_fires.extend(fire.spread())
@@ -177,9 +195,9 @@ def draw_grid(canvas):
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='black')
             elif grid[i][j] == exit:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='green')
-    for fire_warden in fire_wardens:
-        color = 'red' if fire_warden.panic else 'green'
-        canvas.create_oval(fire_warden.y * cell_size, fire_warden.x * cell_size, (fire_warden.y + 1) * cell_size, (fire_warden.x + 1) * cell_size, fill=color)
+    for worker in workers:
+        color = 'red' if worker.panic else 'green'
+        canvas.create_oval(worker.y * cell_size, worker.x * cell_size, (worker.y + 1) * cell_size, (worker.x + 1) * cell_size, fill=color)
     for fire in fires:
         canvas.create_rectangle(fire.y * cell_size, fire.x * cell_size, (fire.y + 1) * cell_size, (fire.x + 1) * cell_size, fill='orange')
 
@@ -187,8 +205,8 @@ def animate():
     update()
     canvas.delete("all")
     draw_grid(canvas)
-    warden_label.config(text="Wardens Escaped: " + str(escaped_wardens))
-    dead_label.config(text="Wardens Died: " + str(dead_wardens))
+    worker_label.config(text="Workers Escaped: " + str(escaped_workers))
+    dead_label.config(text="Workers Died: " + str(dead_workers))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
 
 # Tkinter setup
@@ -198,10 +216,10 @@ root.title("Panic Simulation")
 canvas = tk.Canvas(root, width=grid_size * cell_size, height=grid_size * cell_size)
 canvas.pack()
 
-warden_label = tk.Label(root, text="Wardens Escaped: 0")
-warden_label.pack()
+worker_label = tk.Label(root, text="Workers Escaped: 0")
+worker_label.pack()
 
-dead_label = tk.Label(root, text="Wardens Died: 0")
+dead_label = tk.Label(root, text="Workers Died: 0")
 dead_label.pack()
 
 # Start animation
