@@ -1,6 +1,7 @@
 import tkinter as tk
 import random
 from collections import deque
+from create_office import layout
 
 # Simulation Properties
 open_space, wall, exit, fire = 0, 1, 2, 3
@@ -93,13 +94,12 @@ def initialise():
 
 def update():
     global fire_wardens, fires
-    fire_wardens = [fire_warden for fire_warden in fire_wardens if not fire_warden.move()]
-
+    fire_wardens = [warden for warden in fire_wardens if not warden.move()]
     new_fires = []
     for fire in fires:
         new_fires.extend(fire.spread())
-    for (nx, ny) in new_fires:
-        fires.append(Fire().place_at(nx, ny))  # Add new fire instances based on spread locations
+    for nx, ny in new_fires:
+        fires.append(Fire(nx, ny))
 
 def draw_grid(canvas):
     for i in range(grid_size):
