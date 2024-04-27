@@ -57,7 +57,10 @@ class Workers:
 
         # They shold move randomly if panicked
         if self.panic:
-            self.swarm(workers)
+            if random.random() < 0.1:
+                self.swarm(workers)
+            else:
+                self.move_randomly()
 
         # If calm move along the path to the exit
         else:
