@@ -21,7 +21,7 @@ for i in range(grid_size):
 
 class Worker:
 
-    # Place them randomly in open space
+    # Place workers randomly in open space
     def __init__(self):
         while True:
             self.x = random.randint(1, grid_size - 2)
@@ -33,7 +33,7 @@ class Worker:
         # Initialise their path and panic state
         self.path_to_exit = None
         self.panic = 1 if random.random() <= 0.3 else 0  # Initial panic state
-        self.stationary_time = 0  # Time for which the worker has been stationary
+        self.stationary_time = 0 # The length of time they have been stationary
 
     def worker_update(self):
         global escaped_workers, occupied_positions
@@ -122,7 +122,8 @@ class Worker:
         dists = [math.sqrt((exit_x - self.x)**2 + (exit_y - self.y)**2) for exit_x, exit_y in exits]
         min_dist = min(dists)
         return min_dist
-
+    
+    # Move Panicked agents randomly
     def move_randomly(self):
         possible_moves = [(self.x + dx, self.y + dy) for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
         random.shuffle(possible_moves)
@@ -139,7 +140,8 @@ class Worker:
             if grid[x][y] == fire:
                 return True
         return False
-
+    
+    # Find the shortest path to an exit for each agent
     def find_path_to_exit(self):
 
         # Create list to keep track of visited cells.
@@ -200,13 +202,14 @@ class Fire:
             if 0 <= self.x + dx < grid_size and 0 <= self.y + dy < grid_size and grid[self.x + dx][self.y + dy] == open_space
         ]
 
-        if open_adjacent_spaces and random.random() < 0.4:  # Check if there are open spaces and if fire spreads
+        if open_adjacent_spaces and random.random() < 1:  # Check if there are open spaces and if fire spreads
             random.shuffle(open_adjacent_spaces)
             new_x, new_y = open_adjacent_spaces[0]  # Spread to the first shuffled open space
             grid[new_x][new_y] = fire
             return [(new_x, new_y)]
         return []
 
+# Create the two agent types
 def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions
 
@@ -217,6 +220,7 @@ def initialise():
     escaped_workers = 0
     dead_workers = 0
 
+# Update the two agent types
 def update():
     global workers, fires
     workers = [worker for worker in workers if not worker.worker_update()]
@@ -227,40 +231,50 @@ def update():
     for nx, ny in new_fires:
         fires.append(Fire(nx, ny))
 
-def draw_static_elements(canvas):
+def draw_grid(canvas):
     for i in range(grid_size):
         for j in range(grid_size):
             if grid[i][j] == wall:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='black')
             elif grid[i][j] == exit:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='green')
-
-def draw_dynamic_elements(canvas):
-    # Clear previous dynamic objects
-    canvas.delete("dynamic")
-
-    # Redraw dynamic objects
     for worker in workers:
         color = 'red' if worker.panic else 'green'
-        canvas.create_oval(
-            worker.y * cell_size, worker.x * cell_size,
-            (worker.y + 1) * cell_size, (worker.x + 1) * cell_size,
-            fill=color, tags="dynamic"
-        )
+        canvas.create_oval(worker.y * cell_size, worker.x * cell_size, (worker.y + 1) * cell_size, (worker.x + 1) * cell_size, fill=color)
     for fire in fires:
-        canvas.create_rectangle(
-            fire.y * cell_size, fire.x * cell_size,
-            (fire.y + 1) * cell_size, (fire.x + 1) * cell_size,
-            fill='orange', tags="dynamic"
-        )
+        canvas.create_rectangle(fire.y * cell_size, fire.x * cell_size, (fire.y + 1) * cell_size, (fire.x + 1) * cell_size, fill='orange')
 
 def animate():
-    update()  # Assumes this function updates the positions of workers and fire locations
-    canvas.delete("dynamic")  # Delete only dynamic objects
-    draw_dynamic_elements(canvas)
+    update()
+    canvas.delete("all")
+    draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
+
+step_count = 0
+
+def run_continuous():
+    global step_count
+    update()
+    canvas.delete("all")
+    draw_grid(canvas)
+    worker_label.config(text="Workers Escaped: " + str(escaped_workers))
+    dead_label.config(text="Workers Died: " + str(dead_workers))
+    step_count += 1
+    step_label.config(text="Step: " + str(step_count))
+    if workers:
+        root.after(50, run_continuous)
+
+def run_step():
+    global step_count
+    update()
+    canvas.delete("all")
+    draw_grid(canvas)
+    worker_label.config(text="Workers Escaped: " + str(escaped_workers))
+    dead_label.config(text="Workers Died: " + str(dead_workers))
+    step_count += 1
+    step_label.config(text="Step: " + str(step_count))
 
 # Tkinter setup
 initialise()
@@ -275,8 +289,13 @@ worker_label.pack()
 dead_label = tk.Label(root, text="Workers Died: 0")
 dead_label.pack()
 
-# Start animation
-draw_static_elements(canvas)
-animate()
+continuous_button = tk.Button(root, text="Run Continuous", command=run_continuous)
+continuous_button.pack()
+
+step_button = tk.Button(root, text="Step", command=run_step)
+step_button.pack()
+
+step_label = tk.Label(root, text="Step: 0")
+step_label.pack()
 
 root.mainloop()

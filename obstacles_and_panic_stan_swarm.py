@@ -82,7 +82,7 @@ class Workers:
         return False
     
     def calculate_local_center_of_mass(self, workers):
-        total_mass = 1  # Initialize with own position
+        total_mass = 1  # Initialise with own position
         center_x = self.x
         center_y = self.y
 
