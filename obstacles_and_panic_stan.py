@@ -8,13 +8,13 @@ import math
 open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 cell_size = 8  # Size of each cell in pixels
-panic_percent = 0.5
-number_of_workers = 500
-number_of_fires = 1
-fire_x = random.randint(1, grid_size - 2)
-fire_y = random.randint(1, grid_size - 2)
-fire_spread_rate = 0.4
-vision = 10
+# panic_percent = 0.5
+# number_of_workers = 500
+# number_of_fires = 1
+# fire_x = random.randint(1, grid_size - 2)
+# fire_y = random.randint(1, grid_size - 2)
+# fire_spread_rate = 0.4
+# vision = 10
 
 
 grid = layout()
@@ -260,43 +260,43 @@ step_count = 0
 
 def run_continuous():
     global step_count, panic_percent, number_of_workers, number_of_fires, fire_spread_rate, vision
-    # Retrieve parameter values from input fields
+    
+    # Retrieve custom parameter values from input fields
     panic_percent = float(panic_percent_input.get())
     number_of_workers = int(number_of_workers_input.get())
     number_of_fires = int(number_of_fires_input.get())
     fire_spread_rate = float(fire_spread_rate_input.get())
     vision = int(vision_input.get())
-
-    step_count = 0
-    initialise()  # Reinitialize the simulation with new parameters
+    
     update()
     canvas.delete("all")
     draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
+    step_count += 1
     step_label.config(text="Step: " + str(step_count))
     if workers:
         root.after(50, run_continuous)
 
 def run_step():
     global step_count, panic_percent, number_of_workers, number_of_fires, fire_spread_rate, vision
-    # Retrieve parameter values from input fields
+    
+    # Retrieve custom parameter values from input fields
     panic_percent = float(panic_percent_input.get())
     number_of_workers = int(number_of_workers_input.get())
     number_of_fires = int(number_of_fires_input.get())
     fire_spread_rate = float(fire_spread_rate_input.get())
     vision = int(vision_input.get())
-
-    step_count += 1
+    
     update()
     canvas.delete("all")
     draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
+    step_count += 1
     step_label.config(text="Step: " + str(step_count))
 
 # Tkinter setup
-initialise()
 root = tk.Tk()
 root.title("Panic Simulation")
 canvas = tk.Canvas(root, width=grid_size * cell_size, height=grid_size * cell_size)
@@ -339,5 +339,5 @@ step_button.pack()
 # Label to display current step
 step_label = tk.Label(root, text="Step: 0")
 step_label.pack()
-
+initialise()
 root.mainloop()
