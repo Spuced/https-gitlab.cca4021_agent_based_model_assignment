@@ -130,7 +130,7 @@ class Worker:
         
         # Make them take on the panic state of their neighbours
         if self.should_change_panic():
-            self.panic = 1 - self.panic  # Change panic state
+            self.panic = not self.panic  # Change Panic State
 
         # Check distance to exit and change panic state accordingly
         if self.distance_to_exit() <= 5:
@@ -180,9 +180,24 @@ class Worker:
     # Change their panic level based on their neighbours
     def should_change_panic(self):
         nearby_agents = self.get_nearby_agents()
+        if not nearby_agents:  # If there are no nearby agents leave unchanged
+            return False
+
         num_panicked = sum(agent.panic for agent in nearby_agents)
-        num_calm = len(nearby_agents) - num_panicked
-        return num_panicked < num_calm if self.panic else num_calm < num_panicked
+        total_nearby = len(nearby_agents)
+        
+        # Calculate the probability based on the ratio of panicked agents
+        panic_ratio = num_panicked / total_nearby
+        
+        # Calculate changing probabilities
+        if self.panic:
+            # Probability of calming down if currently panicked
+            calm_probability = 1 - panic_ratio
+            return random.random() < calm_probability
+        else:
+            # Probability of panicking if currently calm
+            panic_probability = panic_ratio
+            return random.random() < panic_probability
 
     def get_nearby_agents(self):
         nearby_agents = []
