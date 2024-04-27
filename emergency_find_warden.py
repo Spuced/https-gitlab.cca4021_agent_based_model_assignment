@@ -25,23 +25,74 @@ class Panicker:
 
     def move(self):
         global fire_wardens, escaped_panickers
-        potential_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        for fire_warden in fire_wardens:
-            distance = abs(fire_warden.x - self.x) + abs(fire_warden.y - self.y)
-            if distance <= vision:
-                # Check if there is a clear path to the fire warden
+        
+        # Check for exits within distance 10
+        exits_within_range = []
+        for i in range(grid_size):
+            for j in range(grid_size):
+                if grid[i][j] == exit:
+                    distance = abs(j - self.y) + abs(i - self.x)
+                    if distance <= 10:
+                        exits_within_range.append((i, j))
+
+        if exits_within_range:  # Move towards the closest exit
+            min_distance = float('inf')
+            closest_exit = None
+            for exit_x, exit_y in exits_within_range:
+                distance = abs(exit_x - self.x) + abs(exit_y - self.y)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_exit = (exit_x, exit_y)
+            if closest_exit:
+                exit_x, exit_y = closest_exit
+                dx = 1 if exit_y > self.y else -1
+                dy = 1 if exit_x > self.x else -1
                 clear_path = True
-                dx = 1 if fire_warden.x > self.x else -1
-                dy = 1 if fire_warden.y > self.y else -1
-                for i in range(1, distance):
-                    new_x = self.x + i * dx
-                    new_y = self.y + i * dy
+                for k in range(1, min_distance):
+                    new_x = self.x + k * dx
+                    new_y = self.y + k * dy
                     if not (0 <= new_x < grid_size and 0 <= new_y < grid_size) or grid[new_x][new_y] == wall:
                         clear_path = False
                         break
                 if clear_path:
-                    potential_moves = [(dx, 0), (0, dy)]
-                break
+                    self.x, self.y = exit_x, exit_y
+                    if grid[exit_x][exit_y] == exit:
+                        escaped_panickers += 1
+                        return True
+                    return False  # Moved towards the exit but not escaped yet
+        
+        # Check for fire wardens within distance 10
+        wardens_within_range = []
+        for fire_warden in fire_wardens:
+            distance = abs(fire_warden.x - self.x) + abs(fire_warden.y - self.y)
+            if distance <= 10:
+                wardens_within_range.append((fire_warden.x, fire_warden.y))
+
+        if wardens_within_range:  # Move towards the closest warden
+            min_distance = float('inf')
+            closest_warden = None
+            for warden_x, warden_y in wardens_within_range:
+                distance = abs(warden_x - self.x) + abs(warden_y - self.y)
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_warden = (warden_x, warden_y)
+            if closest_warden:
+                warden_x, warden_y = closest_warden
+                dx = 1 if warden_y > self.y else -1
+                dy = 1 if warden_x > self.x else -1
+                clear_path = True
+                for k in range(1, min_distance):
+                    new_x = self.x + k * dx
+                    new_y = self.y + k * dy
+                    if not (0 <= new_x < grid_size and 0 <= new_y < grid_size) or grid[new_x][new_y] == wall:
+                        clear_path = False
+                        break
+                if clear_path:
+                    self.x, self.y = warden_x, warden_y
+                    return False  # Moved towards the warden
+        
+        # Move randomly
+        potential_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         random.shuffle(potential_moves)
         for move_x, move_y in potential_moves:
             new_x, new_y = self.x + move_x, self.y + move_y
@@ -53,6 +104,7 @@ class Panicker:
                     self.x, self.y = new_x, new_y
                     break
         return False
+
 
     
 class FireWarden:
@@ -97,8 +149,8 @@ class FireWarden:
 
 def initialise():
     global panickers, fire_wardens, escaped_panickers, escaped_wardens
-    panickers = [Panicker() for _ in range(100)]
-    fire_wardens = [FireWarden() for _ in range(100)]
+    panickers = [Panicker() for _ in range(200)]
+    fire_wardens = [FireWarden() for _ in range(20)]
     escaped_panickers = 0
     escaped_wardens = 0
 
