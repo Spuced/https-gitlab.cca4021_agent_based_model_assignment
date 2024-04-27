@@ -20,6 +20,8 @@ class FireWarden:
             if grid[self.x][self.y] == open_space and (self.x, self.y) not in occupied_positions:
                 occupied_positions.add((self.x, self.y))
                 break
+
+        # Initialise their path and panic state
         self.path_to_exit = None
         self.panic = 1 if random.random() < 0.3 else 0  # Initial panic state
 
@@ -31,6 +33,7 @@ class FireWarden:
             occupied_positions.remove((self.x, self.y))
             dead_wardens += 1
             return True
+        
         steps_to_check = 5  # Check the next 5 steps; adjust this value as needed
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
