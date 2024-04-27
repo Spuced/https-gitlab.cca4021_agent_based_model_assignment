@@ -1,14 +1,11 @@
 import tkinter as tk
 import random
 from collections import deque
-from create_office import layout
 
 # Simulation Properties
-open_space = 0
-wall = 1
-exit = 2
-fire = 3
+open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
+cell_size = 8  # Size of each cell in pixels
 cell_size = 8  # Adjust the size of each cell
 
 grid = layout()
@@ -62,35 +59,29 @@ class FireWarden:
 
 
 class Fire:
-
-    def __init__(self):
-        while True:
-            self.x = random.randint(1, grid_size - 2)
-            self.y = random.randint(1, grid_size - 2)
-            if grid[self.x][self.y] == open_space:
-                grid[self.x][self.y] = fire  # Place fire on the grid
-                break
-
-    def place_at(self, x, y):
-        self.x, self.y = x, y
-        grid[self.x][self.y] = fire  # Place fire on the grid
-        return self
+    def __init__(self, x=None, y=None):
+        if x is None or y is None:
+            while True:
+                self.x, self.y = random.randint(1, grid_size - 2), random.randint(1, grid_size - 2)
+                if grid[self.x][self.y] == open_space:
+                    grid[self.x][self.y] = fire
+                    break
+        else:
+            self.x, self.y = x, y
+            grid[self.x][self.y] = fire
 
     def spread(self):
-        if random.random() < 1:  # Correcting the spread chance to 20%
+        if random.random() < 0.6:
             spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
             random.shuffle(spread_moves)
-            new_fires = []  # Store new fire locations before updating the grid
+            new_fires = set()
             for move_x, move_y in spread_moves:
-                new_x = self.x + move_x
-                new_y = self.y + move_y
-                if 0 <= new_x < grid_size and 0 <= new_y < grid_size:
-                    if grid[new_x][new_y] == open_space:
-                        new_fires.append((new_x, new_y))
-                        break  # Only spread to one new cell at a time
-
-            return new_fires
-        return []  # No spread occurred
+                new_x, new_y = self.x + move_x, self.y + move_y
+                if 0 <= new_x < grid_size and 0 <= new_y < grid_size and grid[new_x][new_y] == open_space:
+                    new_fires.add((new_x, new_y))
+                    break
+            return list(new_fires)
+        return []
 
 def initialise():
     global panickers, fire_wardens, fires, escaped_wardens
