@@ -10,6 +10,7 @@ grid_size = 100
 cell_size = 8  # Size of each cell in pixels
 
 grid = layout()
+#grid = layout(desks=False, door_width=1, exit_locations=['top', 'left'])
 
 # Mark the exits
 exits = []
@@ -31,7 +32,7 @@ class Worker:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() < 0.3 else 0  # Initial panic state
+        self.panic = 1 if random.random() <= 0.3 else 0  # Initial panic state
         self.stationary_time = 0  # Time for which the worker has been stationary
 
     def worker_update(self):
@@ -39,13 +40,13 @@ class Worker:
 
         initial_position = (self.x, self.y)
 
-        # Do nothing if they die
+        # Check if they die
         if self.die():
             return True
         
-        # If fire blocks the next 10 steps
+        # If fire blocks the next n steps
         # Or if they have been stationary for n inerations they should calulate a new path
-        steps_to_check = 10
+        steps_to_check = 15
         patience = 10
 
         if self.panic != 1:
@@ -53,9 +54,9 @@ class Worker:
                 self.path_to_exit = self.find_path_to_exit()
                 self.stationary_time = 0
 
-        # Make them panicked if there is no escape route
-        # if self.path_to_exit == None:
-        #     self.panic = 1
+            # Make them panicked if there is no escape route
+            if len(self.path_to_exit) == 0:
+                self.panic = 1
 
         # Make them take on the panic state of their neighbours
         if self.should_change_panic():
@@ -72,11 +73,11 @@ class Worker:
         # If calm move along the path to the exit
         else:
             if self.path_to_exit:
-                next_x, next_y = self.path_to_exit[0]  # Peek the next position without removing it
+                next_x, next_y = self.path_to_exit[0]  # Check the next position
 
                 # If it is free move them along their path
                 if (next_x, next_y) not in occupied_positions:
-                    self.path_to_exit.pop(0)  # Remove the position as we are about to move there
+                    self.path_to_exit.pop(0)  # Remove the position as we they about to move there
                     occupied_positions.remove((self.x, self.y))
                     self.x, self.y = next_x, next_y
                     occupied_positions.add((self.x, self.y))
@@ -86,7 +87,6 @@ class Worker:
                         escaped_workers += 1
                         occupied_positions.remove((self.x, self.y))
                         return True
-                    
                     
         # Check if the worker has moved
         if (self.x, self.y) == initial_position:
@@ -161,12 +161,14 @@ class Worker:
                     if grid[new_x][new_y] == exit:
                         # Return the path to this exit, appending the exit position to the current path.
                         return path + [(new_x, new_y)]
+                    
                     # If the adjacent cell is open space, it's a valid cell to move to.
                     #elif grid[nx][ny] == open_space:
                     elif grid[new_x][new_y] == open_space and (new_x, new_y) not in occupied_positions:
 
                         # Enqueue this cell along with the updated path.
                         queue.append((new_x, new_y, path + [(new_x, new_y)]))
+
                         # Mark this cell as visited to avoid revisiting.
                         visited[new_x][new_y] = True
 
@@ -249,7 +251,7 @@ def animate():
 # Tkinter setup
 initialise()
 root = tk.Tk()
-root.title("Panic Simulation")
+root.title("Evacuation Simulation")
 canvas = tk.Canvas(root, width=grid_size * cell_size, height=grid_size * cell_size)
 canvas.pack()
 
