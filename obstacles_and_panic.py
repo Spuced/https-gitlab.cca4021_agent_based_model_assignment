@@ -11,7 +11,7 @@ cell_size = 8  # Size of each cell in pixels
 
 grid = layout()
 
-
+# Mark the exits
 exits = []
 for i in range(grid_size):
     for j in range(grid_size):
@@ -31,20 +31,33 @@ class Worker:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() < 0.2 else 0  # Initial panic state
+        self.panic = 1 if random.random() < 0.6 else 0  # Initial panic state
+        self.stationary_time = 0  # Time for which the worker has been stationary
 
     def worker_update(self):
         global escaped_workers, occupied_positions
+
+        initial_position = (self.x, self.y)
 
         # Do nothing if they die
         if self.die():
             return True
         
-        steps_to_check = 10  # Check the next n steps for fire
-        if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
-            self.path_to_exit = self.find_path_to_exit()
+        # If fire blocks the next 10 steps
+        # Or if they have been stationary for n inerations they should calulate a new path
+        steps_to_check = 10
+        patience = 10
 
-        # Make them calm if they see the exit
+        if self.panic != 1:
+            if not self.path_to_exit or self.stationary_time > patience or self.is_path_blocked(self.path_to_exit, steps_to_check):
+                self.path_to_exit = self.find_path_to_exit()
+                self.stationary_time = 0
+
+        # Make them panicked if there is no escape route
+        # if self.path_to_exit == None:
+        #     self.panic = 1
+
+        # Make them take on the panic state of their neighbours
         if self.should_change_panic():
             self.panic = 1 - self.panic  # Change panic state
 
@@ -73,6 +86,14 @@ class Worker:
                         escaped_workers += 1
                         occupied_positions.remove((self.x, self.y))
                         return True
+                    
+                    
+        # Check if the worker has moved
+        if (self.x, self.y) == initial_position:
+            self.stationary_time += 1  # Increment stationary time if position has not changed
+        else:
+            self.stationary_time = 0  # Reset stationary time if the worker has moved
+
         return False
 
     def should_change_panic(self):
@@ -133,19 +154,21 @@ class Worker:
 
             # Explore all adjacent cells (up, down, left, right).
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                nx, ny = x + dx, y + dy
+                new_x, new_y = x + dx, y + dy
                 # Ensure the new position is within the grid bounds.
-                if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny]:
+                if 0 <= new_x < grid_size and 0 <= new_y < grid_size and not visited[new_x][new_y]:
                     # Check if the adjacent cell is an exit.
-                    if grid[nx][ny] == exit:
+                    if grid[new_x][new_y] == exit:
                         # Return the path to this exit, appending the exit position to the current path.
-                        return path + [(nx, ny)]
+                        return path + [(new_x, new_y)]
                     # If the adjacent cell is open space, it's a valid cell to move to.
-                    elif grid[nx][ny] == open_space:
+                    #elif grid[nx][ny] == open_space:
+                    elif grid[new_x][new_y] == open_space and (new_x, new_y) not in occupied_positions:
+
                         # Enqueue this cell along with the updated path.
-                        queue.append((nx, ny, path + [(nx, ny)]))
+                        queue.append((new_x, new_y, path + [(new_x, new_y)]))
                         # Mark this cell as visited to avoid revisiting.
-                        visited[nx][ny] = True
+                        visited[new_x][new_y] = True
 
         # If no path to an exit was found, return an empty list.
         return []
@@ -166,16 +189,20 @@ class Fire:
 
     # The fire spreads randomly into an adjacent tile
     def spread(self):
-        if random.random() < 0.4:
-            spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-            random.shuffle(spread_moves)
-            new_fires = set()
-            for move_x, move_y in spread_moves:
-                new_x, new_y = self.x + move_x, self.y + move_y
-                if 0 <= new_x < grid_size and 0 <= new_y < grid_size and grid[new_x][new_y] == open_space:
-                    new_fires.add((new_x, new_y))
-                    break
-            return list(new_fires)
+        spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        # Only spread into adjacent spaces
+        open_adjacent_spaces = [
+            (self.x + dx, self.y + dy) 
+            for dx, dy in spread_moves 
+            if 0 <= self.x + dx < grid_size and 0 <= self.y + dy < grid_size and grid[self.x + dx][self.y + dy] == open_space
+        ]
+
+        if open_adjacent_spaces and random.random() < 0.4:  # Check if there are open spaces and if fire spreads
+            random.shuffle(open_adjacent_spaces)
+            new_x, new_y = open_adjacent_spaces[0]  # Spread to the first shuffled open space
+            grid[new_x][new_y] = fire
+            return [(new_x, new_y)]
         return []
 
 def initialise():
