@@ -11,7 +11,7 @@ wall = 1
 exit = 2
 grid_size = 100
 cell_size = 8  # Adjust the size of each cell
-center_of_mass_radius = 2  # Radius to consider for calculating local center of mass
+center_of_mass_radius = 5  # Radius to consider for calculating local center of mass
 
 grid = layout()
 
@@ -26,6 +26,7 @@ class Follower:
 
     def follow_local_center_of_mass(self, leaders, followers):
         if self.move_towards_exit():
+            self.move_towards_exit()
             self.escaped = True
             return True
         elif self.random_movement_counter > 0:
