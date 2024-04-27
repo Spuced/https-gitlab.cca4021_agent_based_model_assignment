@@ -12,6 +12,13 @@ cell_size = 8  # Adjust the size of each cell
 
 grid = layout()
 
+
+exits = []
+for i in range(grid_size):
+    for j in range(grid_size):
+        if grid[i][j] == exit:
+            exits.append([i, j])
+
 class Workers:
 
     # Place them randomly in open space
@@ -92,18 +99,9 @@ class Workers:
             return True
 
     def distance_to_exit(self):
-        exits = self.find_exit_coordinates()
         dists = [math.sqrt((exit_x - self.x)**2 + (exit_y - self.y)**2) for exit_x, exit_y in exits]
         min_dist = min(dists)
         return min_dist
-
-    def find_exit_coordinates(self):
-        exits = []
-        for i in range(grid_size):
-            for j in range(grid_size):
-                if grid[i][j] == exit:
-                    exits.append([i, j])
-        return exits
 
     def move_randomly(self):
         possible_moves = [(self.x + dx, self.y + dy) for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
@@ -172,7 +170,7 @@ def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions
 
     occupied_positions = set() 
-    workers = [Workers() for _ in range(1000)]
+    workers = [Workers() for _ in range(100)]
     fires = [Fire() for _ in range(1)]
 
     escaped_workers = 0
