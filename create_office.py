@@ -27,18 +27,17 @@ def layout():
 			grid[j][i] = wall
 
 	# Create the internal doors
-	grid[45][24:26] = open_space, open_space
-	grid[55][24:26] = open_space, open_space
-	grid[45][75:77] = open_space, open_space
-	grid[55][75:77] = open_space, open_space
+	for i in range(23, 27):
+		grid[45][i] = open_space
+		grid[55][i] = open_space
+		grid[i][45] = open_space
+		grid[i][55] = open_space
 
-	for row in range(24, 26):
-		grid[row][45] = open_space
-		grid[row][55] = open_space
-
-	for row in range(76, 78):
-		grid[row][45] = open_space
-		grid[row][55] = open_space
+	for i in range(75, 79):
+		grid[45][i] = open_space
+		grid[55][i] = open_space
+		grid[i][45] = open_space
+		grid[i][55] = open_space
 
 	# Create the desks
 	for i in range(10, 35):
@@ -60,7 +59,7 @@ def layout():
 			grid[i][j] = wall
 
 	# Set the exits
-	for i in range(49, 51):
+	for i in range(49, 52):
 		grid[0][i] = exit  # Top
 		grid[99][i] = exit # Bottom
 		grid[i][0] = exit  # Left
