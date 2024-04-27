@@ -11,14 +11,13 @@ cell_size = 8  # Size of each cell in pixels
 
 grid = layout()
 
-
 exits = []
 for i in range(grid_size):
     for j in range(grid_size):
         if grid[i][j] == exit:
             exits.append([i, j])
 
-class Worker:
+class Workers:
 
     # Place them randomly in open space
     def __init__(self):
@@ -31,7 +30,7 @@ class Worker:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() < 0.2 else 0  # Initial panic state
+        self.panic = 1 if random.random() < 0.4 else 0  # Initial panic state
 
     def worker_update(self):
         global escaped_workers, occupied_positions
@@ -150,6 +149,7 @@ class Worker:
         # If no path to an exit was found, return an empty list.
         return []
 
+
 class Fire:
 
     # Create a fire randomly in the grid
@@ -166,7 +166,7 @@ class Fire:
 
     # The fire spreads randomly into an adjacent tile
     def spread(self):
-        if random.random() < 0.4:
+        if random.random() < 0.6:
             spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
             random.shuffle(spread_moves)
             new_fires = set()
@@ -182,7 +182,7 @@ def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions
 
     occupied_positions = set() 
-    workers = [Worker() for _ in range(1000)]
+    workers = [Workers() for _ in range(1000)]
     fires = [Fire() for _ in range(1)]
 
     escaped_workers = 0

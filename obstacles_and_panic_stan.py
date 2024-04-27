@@ -52,9 +52,9 @@ class Workers:
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
 
-        # Make them calm if they see the exit
-        if self.should_change_panic():
-            self.panic = 1 - self.panic  # Change panic state
+        # # Make them calm if they see the exit
+        # if self.should_change_panic():
+        #     self.panic = 1 - self.panic  # Change panic state
 
         # Check distance to exit and change panic state accordingly
         if self.distance_to_exit() <= vision:
