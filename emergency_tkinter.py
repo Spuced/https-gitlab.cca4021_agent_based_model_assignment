@@ -3,12 +3,12 @@ import random
 from collections import deque
 from create_office import layout
 
-# # Simulation Properties
+# Simulation Properties
 open_space = 0
 wall = 1
 exit = 2
 grid_size = 100
-cell_size = 8  # Adjust the size of each cell
+cell_size = 16  # Adjust the size of each cell
 
 grid = layout()
 
@@ -77,8 +77,8 @@ class FireWarden:
 def initialise():
     global panickers
     global fire_wardens
-    panickers = [Panicker() for _ in range(100)]
-    fire_wardens = [FireWarden() for _ in range(100)]
+    panickers = [Panicker() for _ in range(1000)]
+    fire_wardens = [FireWarden() for _ in range(1000)]
 
 def update():
     global panickers
