@@ -51,8 +51,6 @@ class Panicker:
                     self.x, self.y = new_x, new_y
                     break
         return False
-
-
     
 class FireWarden:
     def __init__(self):
