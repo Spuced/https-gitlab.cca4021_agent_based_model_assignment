@@ -55,9 +55,8 @@ class Panicker:
                         clear_path = False
                         break
                 if clear_path:
-                    self.x += dx
-                    self.y += dy
-                    if grid[self.x][self.y] == exit:
+                    self.x, self.y = exit_x, exit_y
+                    if grid[exit_x][exit_y] == exit:
                         escaped_panickers += 1
                         return True
                     return False  # Moved towards the exit but not escaped yet
