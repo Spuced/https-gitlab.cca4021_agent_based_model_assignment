@@ -95,7 +95,8 @@ class Worker:
             self.stationary_time = 0  # Reset stationary time if the worker has moved
 
         return False
-
+    
+    # Change their panic level based on their neighbours
     def should_change_panic(self):
         nearby_agents = self.get_nearby_agents()
         num_panicked = sum(agent.panic for agent in nearby_agents)
@@ -119,10 +120,10 @@ class Worker:
             return True
 
     def distance_to_exit(self):
-        dists = [math.sqrt((exit_x - self.x)**2 + (exit_y - self.y)**2) for exit_x, exit_y in exits]
+        dists = [abs(exit_x - self.x) + abs(exit_y - self.y) for exit_x, exit_y in exits]
         min_dist = min(dists)
         return min_dist
-    
+        
     # Move Panicked agents randomly
     def move_randomly(self):
         possible_moves = [(self.x + dx, self.y + dy) for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
