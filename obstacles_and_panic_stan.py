@@ -9,7 +9,8 @@ open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 cell_size = 8  # Size of each cell in pixels
 cell_size = 8  # Adjust the size of each cell
-panic_percent = 0.4
+panic_percent = 0.5
+panic_spread_percent = 0.7
 number_of_workers = 500
 number_of_fires = 1
 fire_x = random.randint(1, grid_size - 2)
@@ -39,7 +40,7 @@ class Workers:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() < panic_percent else 0  # Initial panic state
+        self.panic = 1 if random.random() <= panic_percent else 0  # Initial panic state
 
     def worker_update(self):
         global escaped_workers, occupied_positions
@@ -87,7 +88,11 @@ class Workers:
         nearby_agents = self.get_nearby_agents()
         num_panicked = sum(agent.panic for agent in nearby_agents)
         num_calm = len(nearby_agents) - num_panicked
-        return num_panicked < num_calm if self.panic else num_calm < num_panicked
+        panic = num_panicked < num_calm if self.panic else num_calm < num_panicked
+        if random.random() < panic_spread_percent:
+            return panic
+        else:
+            return panic != panic
 
     def get_nearby_agents(self):
         nearby_agents = []
