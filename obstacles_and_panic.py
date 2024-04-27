@@ -122,7 +122,8 @@ class Worker:
         dists = [math.sqrt((exit_x - self.x)**2 + (exit_y - self.y)**2) for exit_x, exit_y in exits]
         min_dist = min(dists)
         return min_dist
-
+    
+    # Move Panicked agents randomly
     def move_randomly(self):
         possible_moves = [(self.x + dx, self.y + dy) for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
         random.shuffle(possible_moves)
@@ -139,7 +140,8 @@ class Worker:
             if grid[x][y] == fire:
                 return True
         return False
-
+    
+    # Find the shortest path to an exit for each agent
     def find_path_to_exit(self):
 
         # Create list to keep track of visited cells.
@@ -273,7 +275,7 @@ def run_step():
     dead_label.config(text="Workers Died: " + str(dead_workers))
     step_count += 1
     step_label.config(text="Step: " + str(step_count))
-    
+
 # Tkinter setup
 initialise()
 root = tk.Tk()
