@@ -12,28 +12,55 @@ cell_size = 8  # Adjust the size of each cell
 
 grid = layout()
 
-# Creating classes for each agent type
 class Panicker:
     def __init__(self):
+        self.history = deque(maxlen=20)  # Store Most recent
         while True:
             self.x = random.randint(1, grid_size - 2)
             self.y = random.randint(1, grid_size - 2)
             if grid[self.x][self.y] == open_space:
+                self.history.append((self.x, self.y))  # Add initial position to history
                 break
 
     def move(self):
         potential_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         random.shuffle(potential_moves)
+        
+        # First try to find a move that is not in history and is open space
+        valid_moves = []
+        fallback_moves = []
         for move_x, move_y in potential_moves:
             new_x = self.x + move_x
             new_y = self.y + move_y
             if 0 <= new_x < grid_size and 0 <= new_y < grid_size:
                 if grid[new_x][new_y] == exit:
-                    return True
-                elif grid[new_x][new_y] == open_space:
                     self.x = new_x
                     self.y = new_y
-                    break
+                    return True  # Agent reaches an exit
+                elif grid[new_x][new_y] == open_space:
+                    if (new_x, new_y) not in self.history:
+                        valid_moves.append((new_x, new_y))
+                    else:
+                        fallback_moves.append((new_x, new_y))
+        
+        # If there are valid moves not in history, execute one of them
+        if valid_moves:
+            new_x, new_y = random.choice(valid_moves)
+            self.x = new_x
+            self.y = new_y
+            self.history.append((self.x, self.y))
+            return False
+        
+        # If no valid moves and fallback is needed, pick one
+        if fallback_moves:
+            new_x, new_y = random.choice(fallback_moves)
+            self.x = new_x
+            self.y = new_y
+            if len(self.history) == self.history.maxlen:
+                self.history.popleft()  # Remove oldest entry if max length is reached
+            self.history.append((self.x, self.y))
+            return False
+
         return False
     
 class FireWarden:
