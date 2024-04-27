@@ -37,28 +37,30 @@ class FireWarden:
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
 
-        if self.path_to_exit:
-            next_x, next_y = self.path_to_exit[0]  # Peek the next position without removing it
-            if (next_x, next_y) not in occupied_positions:
-                self.path_to_exit.pop(0)  # Remove the position as we are about to move there
-                occupied_positions.remove((self.x, self.y))
-                self.x, self.y = next_x, next_y
-                occupied_positions.add((self.x, self.y))
+        # If the next space is occupied by another person they wait
+        next_x, next_y = self.path_to_exit[0]  # Peek the next position without removing it
+        if (next_x, next_y) not in occupied_positions:
+            self.path_to_exit.pop(0)  # Remove the position as we are about to move there
+            occupied_positions.remove((self.x, self.y))
+            self.x, self.y = next_x, next_y
+            occupied_positions.add((self.x, self.y))
 
-                if grid[self.x][self.y] == exit:
-                    escaped_wardens += 1
-                    occupied_positions.remove((self.x, self.y))
-                    return True
+            # Remove them if they reach the exit
+            if grid[self.x][self.y] == exit:
+                escaped_wardens += 1
+                occupied_positions.remove((self.x, self.y))
+                return True
                 
         return False
-
+    
+    # Check up to n steps in the path for fire
     def is_path_blocked(self, path, n):
-        # Check up to n steps in the path for obstacles
         for x, y in path[:n]:
-            if grid[x][y] in (fire, wall):
+            if grid[x][y] == fire:
                 return True
         return False
-
+    
+    # Find a path to the exit
     def find_path_to_exit(self):
         visited = [[False for _ in range(grid_size)] for _ in range(grid_size)]
         queue = deque([(self.x, self.y, [])])
@@ -72,12 +74,16 @@ class FireWarden:
                 if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny]:
                     if grid[nx][ny] == exit:
                         return path + [(nx, ny)]
+                    
+                    # Should not include walls or fire
                     elif grid[nx][ny] == open_space:
                         queue.append((nx, ny, path + [(nx, ny)]))
                         visited[nx][ny] = True
         return []
 
 class Fire:
+
+    # Place fire randomly
     def __init__(self, x=None, y=None):
         if x is None or y is None:
             while True:
@@ -86,9 +92,12 @@ class Fire:
                     grid[self.x][self.y] = fire
                     break
         else:
+
+            # Set the fire on the grid
             self.x, self.y = x, y
             grid[self.x][self.y] = fire
 
+    # Spread the fire into adjacent tiles at with a random chance
     def spread(self):
         if random.random() < 0.5:
             spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -105,6 +114,7 @@ class Fire:
 def initialise():
     global fire_wardens, fires, escaped_wardens, dead_wardens, occupied_positions
 
+    # Create the people and the initial fire
     occupied_positions = set() 
     fire_wardens = [FireWarden() for _ in range(1000)]
     fires = [Fire() for _ in range(1)]
