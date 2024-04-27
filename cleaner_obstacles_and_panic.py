@@ -3,17 +3,13 @@ import random
 from collections import deque
 from create_office import layout
 import math
-import numpy as np
 
 # Simulation Properties
 open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 cell_size = 8  # Size of each cell in pixels
-cell_size = 8  # Adjust the size of each cell
-center_of_mass_radius = 10
 
 grid = layout()
-
 
 exits = []
 for i in range(grid_size):
@@ -47,20 +43,17 @@ class Workers:
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
 
-        # # Make them calm if they see the exit
-        # if self.should_change_panic():
-        #     self.panic = 1 - self.panic  # Change panic state
+        # Make them calm if they see the exit
+        if self.should_change_panic():
+            self.panic = 1 - self.panic  # Change panic state
 
-        # # Check distance to exit and change panic state accordingly
-        # if self.distance_to_exit() <= 5:
-        #     self.panic = 0  # Set panic state to calm if exit is within 5 units
+        # Check distance to exit and change panic state accordingly
+        if self.distance_to_exit() <= 5:
+            self.panic = 0  # Set panic state to calm if exit is within 5 units
 
-        # # They shold move randomly if panicked
-        # if self.panic:
-        #     if random.random() < 0.3:
-        #         self.swarm(workers)
-        #     else:
-        #         self.move_randomly()
+        # They shold move randomly if panicked
+        if self.panic:
+            self.move_randomly()
 
         # If calm move along the path to the exit
         else:
@@ -80,22 +73,6 @@ class Workers:
                         occupied_positions.remove((self.x, self.y))
                         return True
         return False
-    
-    def calculate_local_center_of_mass(self, workers):
-        total_mass = 1  # Initialize with own position
-        center_x = self.x
-        center_y = self.y
-
-        for worker in workers:
-            if abs(worker.x - self.x) <= center_of_mass_radius and abs(worker.y - self.y) <= center_of_mass_radius:
-                total_mass += 1
-                center_x += worker.x
-                center_y += worker.y
-
-        if total_mass > 1:  # Avoid division by zero
-            return center_x / total_mass, center_y / total_mass
-        else:
-            return self.x, self.y
 
     def should_change_panic(self):
         nearby_agents = self.get_nearby_agents()
@@ -134,18 +111,6 @@ class Workers:
                 occupied_positions.add((self.x, self.y))
                 break
 
-    def swarm(self, workers):
-            center_x, center_y = self.calculate_local_center_of_mass(workers)
-            move_x = np.sign(center_x - self.x)
-            move_y = np.sign(center_y - self.y)
-            new_x = int(self.x + move_x)
-            new_y = int(self.y + move_y)
-            if 0 <= new_x < grid_size and 0 <= new_y < grid_size and grid[new_x][new_y] == open_space and (new_x, new_y) not in occupied_positions:
-                occupied_positions.remove((self.x, self.y))
-                self.x = new_x
-                self.y = new_y
-                occupied_positions.add((self.x, self.y))
-
     # Check up to n steps in the path for fire
     def is_path_blocked(self, path, n):
         for x, y in path[:n]:
@@ -154,22 +119,36 @@ class Workers:
         return False
 
     def find_path_to_exit(self):
+
+        # Create list to keep track of visited cells.
         visited = [[False for _ in range(grid_size)] for _ in range(grid_size)]
+        # Start the queue with the initial position of this worker and an empty path.
         queue = deque([(self.x, self.y, [])])
         visited[self.x][self.y] = True
 
+        # Continue searching until there are no more cells to explore.
         while queue:
             x, y, path = queue.popleft()
 
+            # Explore all adjacent cells (up, down, left, right).
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 nx, ny = x + dx, y + dy
+                # Ensure the new position is within the grid bounds.
                 if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny]:
+                    # Check if the adjacent cell is an exit.
                     if grid[nx][ny] == exit:
+                        # Return the path to this exit, appending the exit position to the current path.
                         return path + [(nx, ny)]
+                    # If the adjacent cell is open space, it's a valid cell to move to.
                     elif grid[nx][ny] == open_space:
+                        # Enqueue this cell along with the updated path.
                         queue.append((nx, ny, path + [(nx, ny)]))
+                        # Mark this cell as visited to avoid revisiting.
                         visited[nx][ny] = True
+
+        # If no path to an exit was found, return an empty list.
         return []
+
 
 class Fire:
 

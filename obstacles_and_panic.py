@@ -8,7 +8,6 @@ import math
 open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 cell_size = 8  # Size of each cell in pixels
-cell_size = 8  # Adjust the size of each cell
 
 grid = layout()
 
@@ -19,7 +18,7 @@ for i in range(grid_size):
         if grid[i][j] == exit:
             exits.append([i, j])
 
-class Workers:
+class Worker:
 
     # Place them randomly in open space
     def __init__(self):
@@ -32,7 +31,7 @@ class Workers:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() < 0.4 else 0  # Initial panic state
+        self.panic = 1 if random.random() < 0.2 else 0  # Initial panic state
 
     def worker_update(self):
         global escaped_workers, occupied_positions
@@ -121,21 +120,34 @@ class Workers:
         return False
 
     def find_path_to_exit(self):
+
+        # Create list to keep track of visited cells.
         visited = [[False for _ in range(grid_size)] for _ in range(grid_size)]
+        # Start the queue with the initial position of this worker and an empty path.
         queue = deque([(self.x, self.y, [])])
         visited[self.x][self.y] = True
 
+        # Continue searching until there are no more cells to explore.
         while queue:
             x, y, path = queue.popleft()
 
+            # Explore all adjacent cells (up, down, left, right).
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 nx, ny = x + dx, y + dy
+                # Ensure the new position is within the grid bounds.
                 if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny]:
+                    # Check if the adjacent cell is an exit.
                     if grid[nx][ny] == exit:
+                        # Return the path to this exit, appending the exit position to the current path.
                         return path + [(nx, ny)]
+                    # If the adjacent cell is open space, it's a valid cell to move to.
                     elif grid[nx][ny] == open_space:
+                        # Enqueue this cell along with the updated path.
                         queue.append((nx, ny, path + [(nx, ny)]))
+                        # Mark this cell as visited to avoid revisiting.
                         visited[nx][ny] = True
+
+        # If no path to an exit was found, return an empty list.
         return []
 
 class Fire:
@@ -154,7 +166,7 @@ class Fire:
 
     # The fire spreads randomly into an adjacent tile
     def spread(self):
-        if random.random() < 0.6:
+        if random.random() < 0.4:
             spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
             random.shuffle(spread_moves)
             new_fires = set()
@@ -170,7 +182,7 @@ def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions
 
     occupied_positions = set() 
-    workers = [Workers() for _ in range(100)]
+    workers = [Worker() for _ in range(1000)]
     fires = [Fire() for _ in range(1)]
 
     escaped_workers = 0
