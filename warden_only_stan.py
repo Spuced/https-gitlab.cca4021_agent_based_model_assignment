@@ -23,7 +23,12 @@ class FireWarden:
         self.panic = 1 if random.random() < 0.3 else 0  # Initial panic state
 
     def move(self):
-        global escaped_wardens
+        global escaped_wardens, dead_wardens
+
+        # They die if they touch fire
+        if grid[self.x][self.y] == fire:
+            dead_wardens += 1
+            return True
         steps_to_check = 5  # Check the next 5 steps; adjust this value as needed
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
@@ -133,12 +138,12 @@ class Fire:
         return []
 
 def initialise():
-    global panickers, fire_wardens, fires, escaped_wardens
+    global fire_wardens, fires, escaped_wardens, dead_wardens
     fire_wardens = [FireWarden() for _ in range(100)]
     fires = [Fire() for _ in range(1)]
 
-    escaped_panickers = 0
     escaped_wardens = 0
+    dead_wardens = 0
 
 def update():
     global fire_wardens, fires
@@ -156,21 +161,19 @@ def draw_grid(canvas):
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='black')
             elif grid[i][j] == exit:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='green')
-
     for fire_warden in fire_wardens:
         color = 'red' if fire_warden.panic else 'green'
         canvas.create_oval(fire_warden.y * cell_size, fire_warden.x * cell_size, (fire_warden.y + 1) * cell_size, (fire_warden.x + 1) * cell_size, fill=color)
     for fire in fires:
         canvas.create_rectangle(fire.y * cell_size, fire.x * cell_size, (fire.y + 1) * cell_size, (fire.x + 1) * cell_size, fill='orange')
 
-
 def animate():
     update()
     canvas.delete("all")
     draw_grid(canvas)
     warden_label.config(text="Wardens Escaped: " + str(escaped_wardens))
+    dead_label.config(text="Wardens Died: " + str(dead_wardens))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
-
 
 # Tkinter setup
 initialise()
@@ -181,6 +184,9 @@ canvas.pack()
 
 warden_label = tk.Label(root, text="Wardens Escaped: 0")
 warden_label.pack()
+
+dead_label = tk.Label(root, text="Wardens Died: 0")
+dead_label.pack()
 
 # Start animation
 animate()
