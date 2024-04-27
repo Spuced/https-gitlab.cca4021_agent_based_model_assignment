@@ -2,6 +2,7 @@ import tkinter as tk
 import random
 from collections import deque
 from create_office import layout
+import math
 
 # Simulation Properties
 open_space, wall, exit, fire = 0, 1, 2, 3
@@ -30,6 +31,10 @@ class FireWarden:
         if self.should_change_panic():
             self.panic = 1 - self.panic  # Change panic state
 
+        # Check distance to exit and change panic state accordingly
+        if self.distance_to_exit() <= 5:
+            self.panic = 0  # Set panic state to calm if exit is within 5 units
+
         if self.panic:
             self.move_randomly()
         else:
@@ -52,6 +57,20 @@ class FireWarden:
             if warden != self and abs(warden.x - self.x) <= 5 and abs(warden.y - self.y) <= 5:
                 nearby_agents.append(warden)
         return nearby_agents
+
+    def distance_to_exit(self):
+        exits = self.find_exit_coordinates()
+        dists = [math.sqrt((exit_x - self.x)**2 + (exit_y - self.y)**2) for exit_x, exit_y in exits]
+        min_dist = min(dists)
+        return min_dist
+
+    def find_exit_coordinates(self):
+        exits = []
+        for i in range(grid_size):
+            for j in range(grid_size):
+                if grid[i][j] == exit:
+                    exits.append([i, j])
+        return exits
 
     def move_randomly(self):
         possible_moves = [(self.x + dx, self.y + dy) for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
