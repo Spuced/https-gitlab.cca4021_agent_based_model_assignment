@@ -17,16 +17,18 @@ class FireWarden:
         while True:
             self.x = random.randint(1, grid_size - 2)
             self.y = random.randint(1, grid_size - 2)
-            if grid[self.x][self.y] == open_space:
+            if grid[self.x][self.y] == open_space and (self.x, self.y) not in occupied_positions:
+                occupied_positions.add((self.x, self.y))
                 break
         self.path_to_exit = None
         self.panic = 1 if random.random() < 0.3 else 0  # Initial panic state
 
     def move(self):
-        global escaped_wardens, dead_wardens
+        global escaped_wardens, dead_wardens, occupied_positions
 
         # They die if they touch fire
         if grid[self.x][self.y] == fire:
+            occupied_positions.remove((self.x, self.y))
             dead_wardens += 1
             return True
         steps_to_check = 5  # Check the next 5 steps; adjust this value as needed
@@ -44,10 +46,17 @@ class FireWarden:
             self.move_randomly()
         else:
             if self.path_to_exit:
-                self.x, self.y = self.path_to_exit.pop(0)
-                if grid[self.x][self.y] == exit:
-                    escaped_wardens += 1
-                    return True
+                next_x, next_y = self.path_to_exit[0]  # Peek the next position without removing it
+                if (next_x, next_y) not in occupied_positions:
+                    self.path_to_exit.pop(0)  # Remove the position as we are about to move there
+                    occupied_positions.remove((self.x, self.y))
+                    self.x, self.y = next_x, next_y
+                    occupied_positions.add((self.x, self.y))
+
+                    if grid[self.x][self.y] == exit:
+                        escaped_wardens += 1
+                        occupied_positions.remove((self.x, self.y))
+                        return True
         return False
 
     def should_change_panic(self):
@@ -81,8 +90,10 @@ class FireWarden:
         possible_moves = [(self.x + dx, self.y + dy) for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
         random.shuffle(possible_moves)
         for new_x, new_y in possible_moves:
-            if 0 <= new_x < grid_size and 0 <= new_y < grid_size and grid[new_x][new_y] == open_space:
+            if 0 <= new_x < grid_size and 0 <= new_y < grid_size and grid[new_x][new_y] == open_space and (new_x, new_y) not in occupied_positions:
+                occupied_positions.remove((self.x, self.y))
                 self.x, self.y = new_x, new_y
+                occupied_positions.add((self.x, self.y))
                 break
 
     def is_path_blocked(self, path, n):
@@ -138,7 +149,9 @@ class Fire:
         return []
 
 def initialise():
-    global fire_wardens, fires, escaped_wardens, dead_wardens
+    global fire_wardens, fires, escaped_wardens, dead_wardens, occupied_positions
+
+    occupied_positions = set() 
     fire_wardens = [FireWarden() for _ in range(100)]
     fires = [Fire() for _ in range(1)]
 
