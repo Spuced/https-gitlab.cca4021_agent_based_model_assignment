@@ -1,6 +1,7 @@
 import tkinter as tk
 import random
 from collections import deque
+import csv
 from create_office import layout
 
 # Simulation Properties
@@ -9,7 +10,7 @@ wall = 1
 exit = 2
 grid_size = 100
 cell_size = 8  # Adjust the size of each cell
-vision = 10
+vision = 5
 
 grid = layout()
 
@@ -23,7 +24,7 @@ class Panicker:
                 break
 
     def move(self):
-        global fire_wardens
+        global fire_wardens, escaped_panickers
         potential_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         for fire_warden in fire_wardens:
             distance = abs(fire_warden.x - self.x) + abs(fire_warden.y - self.y)
@@ -46,6 +47,7 @@ class Panicker:
             new_x, new_y = self.x + move_x, self.y + move_y
             if 0 <= new_x < grid_size and 0 <= new_y < grid_size:
                 if grid[new_x][new_y] == exit:
+                    escaped_panickers += 1
                     return True
                 elif grid[new_x][new_y] == open_space:
                     self.x, self.y = new_x, new_y
@@ -62,12 +64,14 @@ class FireWarden:
         self.path_to_exit = None  # Initialise path_to_exit attribute
 
     def move(self):
+        global escaped_wardens
         if not self.path_to_exit:
             self.path_to_exit = self.find_path_to_exit()
 
         if self.path_to_exit:
             self.x, self.y = self.path_to_exit.pop(0)
             if grid[self.x][self.y] == exit:
+                escaped_wardens += 1
                 return True
         return False
 
@@ -91,14 +95,14 @@ class FireWarden:
         return []
 
 def initialise():
-    global panickers
-    global fire_wardens
-    panickers = [Panicker() for _ in range(1000)]
-    fire_wardens = [FireWarden() for _ in range(1000)]
+    global panickers, fire_wardens, escaped_panickers, escaped_wardens
+    panickers = [Panicker() for _ in range(100)]
+    fire_wardens = [FireWarden() for _ in range(100)]
+    escaped_panickers = 0
+    escaped_wardens = 0
 
 def update():
-    global panickers
-    global fire_wardens
+    global panickers, fire_wardens
     panickers = [panicker for panicker in panickers if not panicker.move()]
     fire_wardens = [fire_warden for fire_warden in fire_wardens if not fire_warden.move()]
 
@@ -118,7 +122,11 @@ def animate():
     update()
     canvas.delete("all")
     draw_grid(canvas)
+    panicker_label.config(text="Panickers Escaped: " + str(escaped_panickers))
+    warden_label.config(text="Wardens Escaped: " + str(escaped_wardens))
+    csv_data.append([escaped_panickers, escaped_wardens])
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
+
 
 # Tkinter setup
 initialise()
@@ -127,7 +135,19 @@ root.title("Panic Simulation")
 canvas = tk.Canvas(root, width=grid_size * cell_size, height=grid_size * cell_size)
 canvas.pack()
 
+# Add labels to display the number of escaped panickers and fire wardens
+panicker_label = tk.Label(root, text="Panickers Escaped: 0")
+panicker_label.pack()
+warden_label = tk.Label(root, text="Wardens Escaped: 0")
+warden_label.pack()
+
+csv_data = [["Panickers Escaped", "Wardens Escaped"]]
 # Start animation
 animate()
 
 root.mainloop()
+
+# Write the CSV data to a file
+with open("escape_data.csv", "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerows(csv_data)
