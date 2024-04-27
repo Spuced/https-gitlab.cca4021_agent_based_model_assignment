@@ -18,6 +18,8 @@ desks_var = tk.BooleanVar(value=True)
 door_width_var = tk.IntVar(value=4)
 exit_locations_var = tk.StringVar(value="top, bottom, left, right")
 panic_percent_var = tk.DoubleVar(value=0.3)
+panic_change_threshold_var = tk.DoubleVar(value=0.7)
+force_calm_var = tk.BooleanVar(value=False)
 steps_to_check_var = tk.IntVar(value=15)
 patience_var = tk.IntVar(value=10)
 num_workers_var = tk.IntVar(value=1000)
@@ -29,7 +31,7 @@ random_seed_var = tk.IntVar(value=1234)
 
 def submit():
 
-    global cell_size, desks, door_width, exit_locations, panic_percent, steps_to_check, patience, num_workers, num_fires, fire_x, fire_y, fire_spread, random_seed
+    global cell_size, desks, door_width, exit_locations, panic_percent, panic_change_threshold, force_calm, steps_to_check, patience, num_workers, num_fires, fire_x, fire_y, fire_spread, random_seed
 
     # Convert the parameters to their normal types using get()
     cell_size = cell_size_var.get()
@@ -37,6 +39,8 @@ def submit():
     door_width = door_width_var.get()
     exit_locations = exit_locations_var.get()
     panic_percent = panic_percent_var.get()
+    panic_change_threshold = panic_change_threshold_var.get()
+    force_calm = force_calm_var.get()
     steps_to_check = steps_to_check_var.get()
     patience = patience_var.get()
     num_workers = num_workers_var.get()
@@ -62,31 +66,37 @@ tk.Entry(app, textvariable=exit_locations_var).grid(row=3, column=1)
 tk.Label(app, text="Panic Percent").grid(row=4, column=0)
 tk.Entry(app, textvariable=panic_percent_var).grid(row=4, column=1)
 
-tk.Label(app, text="Steps to Check").grid(row=5, column=0)
-tk.Entry(app, textvariable=steps_to_check_var).grid(row=5, column=1)
+tk.Label(app, text="Panic Change Threshold").grid(row=5, column=0)
+tk.Entry(app, textvariable=panic_change_threshold_var).grid(row=5, column=1)
 
-tk.Label(app, text="Patience").grid(row=6, column=0)
-tk.Entry(app, textvariable=patience_var).grid(row=6, column=1)
+tk.Label(app, text="Force Calm (True/False)").grid(row=6, column=0)
+tk.Entry(app, textvariable=force_calm_var).grid(row=6, column=1)
 
-tk.Label(app, text="Number of Workers").grid(row=7, column=0)
-tk.Entry(app, textvariable=num_workers_var).grid(row=7, column=1)
+tk.Label(app, text="Vision").grid(row=7, column=0)
+tk.Entry(app, textvariable=steps_to_check_var).grid(row=7, column=1)
 
-tk.Label(app, text="Number of Fires").grid(row=8, column=0)
-tk.Entry(app, textvariable=num_fires_var).grid(row=8, column=1)
+tk.Label(app, text="Patience").grid(row=8, column=0)
+tk.Entry(app, textvariable=patience_var).grid(row=8, column=1)
 
-tk.Label(app, text="Fire X Coordinate").grid(row=9, column=0)
-tk.Entry(app, textvariable=fire_x_var).grid(row=9, column=1)
+tk.Label(app, text="Number of Workers").grid(row=9, column=0)
+tk.Entry(app, textvariable=num_workers_var).grid(row=9, column=1)
 
-tk.Label(app, text="Fire Y Coordinate").grid(row=10, column=0)
-tk.Entry(app, textvariable=fire_y_var).grid(row=10, column=1)
+tk.Label(app, text="Number of Fires").grid(row=10, column=0)
+tk.Entry(app, textvariable=num_fires_var).grid(row=10, column=1)
 
-tk.Label(app, text="Fire Spread").grid(row=11, column=0)
-tk.Entry(app, textvariable=fire_spread_var).grid(row=11, column=1)
+tk.Label(app, text="Fire X Coordinate").grid(row=11, column=0)
+tk.Entry(app, textvariable=fire_x_var).grid(row=11, column=1)
 
-tk.Label(app, text="Random Seed").grid(row=11, column=0)
-tk.Entry(app, textvariable=random_seed_var).grid(row=11, column=1)
+tk.Label(app, text="Fire Y Coordinate").grid(row=12, column=0)
+tk.Entry(app, textvariable=fire_y_var).grid(row=13, column=1)
 
-tk.Button(app, text="Submit", command=submit).grid(row=12, columnspan=2)
+tk.Label(app, text="Fire Spread").grid(row=14, column=0)
+tk.Entry(app, textvariable=fire_spread_var).grid(row=14, column=1)
+
+tk.Label(app, text="Random Seed").grid(row=15, column=0)
+tk.Entry(app, textvariable=random_seed_var).grid(row=15, column=1)
+
+tk.Button(app, text="Submit", command=submit).grid(row=16, columnspan=2)
 
 app.mainloop()
 
@@ -147,6 +157,10 @@ class Worker:
             if len(self.path_to_exit) == 0:
                 self.panic = 1
 
+        # For comparison see how they perform when always calm
+        if force_calm:
+            self.panic = 0
+
         # They shold move randomly if panicked
         if self.panic:
             self.move_randomly()
@@ -180,9 +194,20 @@ class Worker:
     # Change their panic level based on their neighbours
     def should_change_panic(self):
         nearby_agents = self.get_nearby_agents()
+        if not nearby_agents:
+            return False  # No change if no nearby agents
+
         num_panicked = sum(agent.panic for agent in nearby_agents)
-        num_calm = len(nearby_agents) - num_panicked
-        return num_panicked < num_calm if self.panic else num_calm < num_panicked
+        num_nearby = len(nearby_agents)
+        panic_ratio = num_panicked / num_nearby
+
+        # Change staes based on the threshold
+        if self.panic and panic_ratio <= (1 - panic_change_threshold):
+            return True  # Change from panic to calm if less than (1 - threshold) are panicked
+        elif not self.panic and panic_ratio > panic_change_threshold:
+            return True  # Change from calm to panic if more than threshold are panicked
+
+        return False
 
     def get_nearby_agents(self):
         nearby_agents = []
