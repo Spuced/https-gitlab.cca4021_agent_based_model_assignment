@@ -9,12 +9,11 @@ open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 cell_size = 8  # Size of each cell in pixels
 panic_percent = 0.5
-panic_spread_percent = 0.7
 number_of_workers = 500
 number_of_fires = 1
 fire_x = random.randint(1, grid_size - 2)
 fire_y = random.randint(1, grid_size - 2)
-fire_spread_rate = 0.6
+fire_spread_rate = 0.4
 vision = 10
 
 
@@ -41,7 +40,7 @@ class Worker:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() <= 0.3 else 0  # Initial panic state
+        self.panic = 1 if random.random() <= panic_percent else 0  # Initial panic state
         self.stationary_time = 0  # Time for which the worker has been stationary
 
     def worker_update(self):
@@ -58,12 +57,12 @@ class Worker:
             self.panic = 1 - self.panic  # Change panic state
 
         # Check distance to exit and change panic state accordingly
-        if self.distance_to_exit() <= 5:
+        if self.distance_to_exit() <= vision:
             self.panic = 0  # Set panic state to calm if exit is within 5 units
         
         # If fire blocks the next n steps
         # Or if they have been stationary for n inerations they should calulate a new path
-        steps_to_check = 15
+        steps_to_check = vision
         patience = 10
 
         if self.panic != 1:
@@ -114,7 +113,7 @@ class Worker:
     def get_nearby_agents(self):
         nearby_agents = []
         for worker in workers:
-            if worker != self and abs(worker.x - self.x) <= 5 and abs(worker.y - self.y) <= 5:
+            if worker != self and abs(worker.x - self.x) <= vision and abs(worker.y - self.y) <= vision:
                 nearby_agents.append(worker)
         return nearby_agents
     
@@ -190,7 +189,7 @@ class Fire:
     def __init__(self, x=None, y=None):
         if x is None or y is None:
             while True:
-                self.x, self.y = random.randint(1, grid_size - 2), random.randint(1, grid_size - 2)
+                self.x, self.y = fire_x, fire_y
                 if grid[self.x][self.y] == open_space:
                     grid[self.x][self.y] = fire
                     break
@@ -209,7 +208,7 @@ class Fire:
             if 0 <= self.x + dx < grid_size and 0 <= self.y + dy < grid_size and grid[self.x + dx][self.y + dy] == open_space
         ]
 
-        if open_adjacent_spaces and random.random() < 0.4:  # Check if there are open spaces and if fire spreads
+        if open_adjacent_spaces and random.random() < fire_spread_rate:  # Check if there are open spaces and if fire spreads
             random.shuffle(open_adjacent_spaces)
             new_x, new_y = open_adjacent_spaces[0]  # Spread to the first shuffled open space
             grid[new_x][new_y] = fire
@@ -220,8 +219,8 @@ def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions
 
     occupied_positions = set() 
-    workers = [Worker() for _ in range(1000)]
-    fires = [Fire() for _ in range(1)]
+    workers = [Worker() for _ in range(number_of_workers)]
+    fires = [Fire() for _ in range(number_of_fires)]
 
     escaped_workers = 0
     dead_workers = 0
@@ -236,37 +235,23 @@ def update():
     for nx, ny in new_fires:
         fires.append(Fire(nx, ny))
 
-def draw_static_elements(canvas):
+def draw_grid(canvas):
     for i in range(grid_size):
         for j in range(grid_size):
             if grid[i][j] == wall:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='black')
             elif grid[i][j] == exit:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='green')
-
-def draw_dynamic_elements(canvas):
-    # Clear previous dynamic objects
-    canvas.delete("dynamic")
-
-    # Redraw dynamic objects
     for worker in workers:
         color = 'red' if worker.panic else 'green'
-        canvas.create_oval(
-            worker.y * cell_size, worker.x * cell_size,
-            (worker.y + 1) * cell_size, (worker.x + 1) * cell_size,
-            fill=color, tags="dynamic"
-        )
+        canvas.create_oval(worker.y * cell_size, worker.x * cell_size, (worker.y + 1) * cell_size, (worker.x + 1) * cell_size, fill=color)
     for fire in fires:
-        canvas.create_rectangle(
-            fire.y * cell_size, fire.x * cell_size,
-            (fire.y + 1) * cell_size, (fire.x + 1) * cell_size,
-            fill='orange', tags="dynamic"
-        )
+        canvas.create_rectangle(fire.y * cell_size, fire.x * cell_size, (fire.y + 1) * cell_size, (fire.x + 1) * cell_size, fill='orange')
 
 def animate():
     update()  # Assumes this function updates the positions of workers and fire locations
     canvas.delete("dynamic")  # Delete only dynamic objects
-    draw_dynamic_elements(canvas)
+    draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
@@ -274,28 +259,42 @@ def animate():
 step_count = 0
 
 def run_continuous():
-    global step_count
+    global step_count, panic_percent, number_of_workers, number_of_fires, fire_spread_rate, vision
+    # Retrieve parameter values from input fields
+    panic_percent = float(panic_percent_input.get())
+    number_of_workers = int(number_of_workers_input.get())
+    number_of_fires = int(number_of_fires_input.get())
+    fire_spread_rate = float(fire_spread_rate_input.get())
+    vision = int(vision_input.get())
+
+    step_count = 0
+    initialise()  # Reinitialize the simulation with new parameters
     update()
     canvas.delete("all")
-    draw_static_elements(canvas)
-    draw_dynamic_elements(canvas)
+    draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
-    step_count += 1
     step_label.config(text="Step: " + str(step_count))
     if workers:
         root.after(50, run_continuous)
 
 def run_step():
-    global step_count
+    global step_count, panic_percent, number_of_workers, number_of_fires, fire_spread_rate, vision
+    # Retrieve parameter values from input fields
+    panic_percent = float(panic_percent_input.get())
+    number_of_workers = int(number_of_workers_input.get())
+    number_of_fires = int(number_of_fires_input.get())
+    fire_spread_rate = float(fire_spread_rate_input.get())
+    vision = int(vision_input.get())
+
+    step_count += 1
     update()
     canvas.delete("all")
-    draw_static_elements(canvas)
-    draw_dynamic_elements(canvas)
+    draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
-    step_count += 1
     step_label.config(text="Step: " + str(step_count))
+
 # Tkinter setup
 initialise()
 root = tk.Tk()
@@ -303,19 +302,42 @@ root.title("Panic Simulation")
 canvas = tk.Canvas(root, width=grid_size * cell_size, height=grid_size * cell_size)
 canvas.pack()
 
+# Input fields for parameters
+panic_percent_input = tk.Entry(root)
+panic_percent_input.insert(tk.END, str(panic_percent))
+panic_percent_input.pack()
+
+number_of_workers_input = tk.Entry(root)
+number_of_workers_input.insert(tk.END, str(number_of_workers))
+number_of_workers_input.pack()
+
+number_of_fires_input = tk.Entry(root)
+number_of_fires_input.insert(tk.END, str(number_of_fires))
+number_of_fires_input.pack()
+
+fire_spread_rate_input = tk.Entry(root)
+fire_spread_rate_input.insert(tk.END, str(fire_spread_rate))
+fire_spread_rate_input.pack()
+
+vision_input = tk.Entry(root)
+vision_input.insert(tk.END, str(vision))
+vision_input.pack()
+
 worker_label = tk.Label(root, text="Workers Escaped: 0")
 worker_label.pack()
 
 dead_label = tk.Label(root, text="Workers Died: 0")
 dead_label.pack()
 
+# Buttons to start the simulation
 continuous_button = tk.Button(root, text="Run Continuous", command=run_continuous)
 continuous_button.pack()
 
 step_button = tk.Button(root, text="Step", command=run_step)
 step_button.pack()
 
+# Label to display current step
 step_label = tk.Label(root, text="Step: 0")
 step_label.pack()
-draw_static_elements(canvas)
+
 root.mainloop()
