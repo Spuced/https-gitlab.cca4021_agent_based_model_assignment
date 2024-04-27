@@ -8,7 +8,6 @@ import math
 open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 cell_size = 8  # Size of each cell in pixels
-cell_size = 8  # Adjust the size of each cell
 panic_percent = 0.5
 panic_spread_percent = 0.7
 number_of_workers = 500
@@ -18,16 +17,18 @@ fire_y = random.randint(1, grid_size - 2)
 fire_spread_rate = 0.6
 vision = 10
 
+
 grid = layout()
+#grid = layout(desks=False, door_width=1, exit_locations=['top', 'left'])
 
-
+# Mark the exits
 exits = []
 for i in range(grid_size):
     for j in range(grid_size):
         if grid[i][j] == exit:
             exits.append([i, j])
 
-class Workers:
+class Worker:
 
     # Place them randomly in open space
     def __init__(self):
@@ -40,26 +41,39 @@ class Workers:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() <= panic_percent else 0  # Initial panic state
+        self.panic = 1 if random.random() <= 0.3 else 0  # Initial panic state
+        self.stationary_time = 0  # Time for which the worker has been stationary
 
     def worker_update(self):
         global escaped_workers, occupied_positions
 
-        # Do nothing if they die
+        initial_position = (self.x, self.y)
+
+        # Check if they die
         if self.die():
             return True
         
-        steps_to_check = vision  # Check the next n steps for fire
-        if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
-            self.path_to_exit = self.find_path_to_exit()
-
-        # Make them calm if they see the exit
+        # Make them take on the panic state of their neighbours
         if self.should_change_panic():
             self.panic = 1 - self.panic  # Change panic state
 
         # Check distance to exit and change panic state accordingly
-        if self.distance_to_exit() <= vision:
+        if self.distance_to_exit() <= 5:
             self.panic = 0  # Set panic state to calm if exit is within 5 units
+        
+        # If fire blocks the next n steps
+        # Or if they have been stationary for n inerations they should calulate a new path
+        steps_to_check = 15
+        patience = 10
+
+        if self.panic != 1:
+            if not self.path_to_exit or self.stationary_time > patience or self.is_path_blocked(self.path_to_exit, steps_to_check):
+                self.path_to_exit = self.find_path_to_exit()
+                self.stationary_time = 0
+
+            # Make them panicked if there is no escape route
+            if len(self.path_to_exit) == 0:
+                self.panic = 1
 
         # They shold move randomly if panicked
         if self.panic:
@@ -68,7 +82,7 @@ class Workers:
         # If calm move along the path to the exit
         else:
             if self.path_to_exit:
-                next_x, next_y = self.path_to_exit[0]  # Peek the next position without removing it
+                next_x, next_y = self.path_to_exit[0]  # Check the next position
 
                 # If it is free move them along their path
                 if (next_x, next_y) not in occupied_positions:
@@ -82,22 +96,25 @@ class Workers:
                         escaped_workers += 1
                         occupied_positions.remove((self.x, self.y))
                         return True
+                    
+        # Check if the worker has moved
+        if (self.x, self.y) == initial_position:
+            self.stationary_time += 1  # Increment stationary time if position has not changed
+        else:
+            self.stationary_time = 0  # Reset stationary time if the worker has moved
+
         return False
 
     def should_change_panic(self):
         nearby_agents = self.get_nearby_agents()
         num_panicked = sum(agent.panic for agent in nearby_agents)
         num_calm = len(nearby_agents) - num_panicked
-        panic = num_panicked < num_calm if self.panic else num_calm < num_panicked
-        if random.random() < panic_spread_percent:
-            return panic
-        else:
-            return panic != panic
+        return num_panicked < num_calm if self.panic else num_calm < num_panicked
 
     def get_nearby_agents(self):
         nearby_agents = []
         for worker in workers:
-            if worker != self and abs(worker.x - self.x) <= vision and abs(worker.y - self.y) <= vision:
+            if worker != self and abs(worker.x - self.x) <= 5 and abs(worker.y - self.y) <= 5:
                 nearby_agents.append(worker)
         return nearby_agents
     
@@ -133,21 +150,38 @@ class Workers:
         return False
 
     def find_path_to_exit(self):
+
+        # Create list to keep track of visited cells.
         visited = [[False for _ in range(grid_size)] for _ in range(grid_size)]
+        # Start the queue with the initial position of this worker and an empty path.
         queue = deque([(self.x, self.y, [])])
         visited[self.x][self.y] = True
 
+        # Continue searching until there are no more cells to explore.
         while queue:
             x, y, path = queue.popleft()
 
+            # Explore all adjacent cells (up, down, left, right).
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
-                nx, ny = x + dx, y + dy
-                if 0 <= nx < grid_size and 0 <= ny < grid_size and not visited[nx][ny]:
-                    if grid[nx][ny] == exit:
-                        return path + [(nx, ny)]
-                    elif grid[nx][ny] == open_space:
-                        queue.append((nx, ny, path + [(nx, ny)]))
-                        visited[nx][ny] = True
+                new_x, new_y = x + dx, y + dy
+                # Ensure the new position is within the grid bounds.
+                if 0 <= new_x < grid_size and 0 <= new_y < grid_size and not visited[new_x][new_y]:
+                    # Check if the adjacent cell is an exit.
+                    if grid[new_x][new_y] == exit:
+                        # Return the path to this exit, appending the exit position to the current path.
+                        return path + [(new_x, new_y)]
+                    
+                    # If the adjacent cell is open space, it's a valid cell to move to.
+                    #elif grid[nx][ny] == open_space:
+                    elif grid[new_x][new_y] == open_space and (new_x, new_y) not in occupied_positions:
+
+                        # Enqueue this cell along with the updated path.
+                        queue.append((new_x, new_y, path + [(new_x, new_y)]))
+
+                        # Mark this cell as visited to avoid revisiting.
+                        visited[new_x][new_y] = True
+
+        # If no path to an exit was found, return an empty list.
         return []
 
 class Fire:
@@ -156,7 +190,7 @@ class Fire:
     def __init__(self, x=None, y=None):
         if x is None or y is None:
             while True:
-                self.x, self.y = fire_x, fire_y
+                self.x, self.y = random.randint(1, grid_size - 2), random.randint(1, grid_size - 2)
                 if grid[self.x][self.y] == open_space:
                     grid[self.x][self.y] = fire
                     break
@@ -166,24 +200,28 @@ class Fire:
 
     # The fire spreads randomly into an adjacent tile
     def spread(self):
-        if random.random() < fire_spread_rate:
-            spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-            random.shuffle(spread_moves)
-            new_fires = set()
-            for move_x, move_y in spread_moves:
-                new_x, new_y = self.x + move_x, self.y + move_y
-                if 0 <= new_x < grid_size and 0 <= new_y < grid_size and grid[new_x][new_y] == open_space:
-                    new_fires.add((new_x, new_y))
-                    break
-            return list(new_fires)
+        spread_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+        # Only spread into adjacent spaces
+        open_adjacent_spaces = [
+            (self.x + dx, self.y + dy) 
+            for dx, dy in spread_moves 
+            if 0 <= self.x + dx < grid_size and 0 <= self.y + dy < grid_size and grid[self.x + dx][self.y + dy] == open_space
+        ]
+
+        if open_adjacent_spaces and random.random() < 0.4:  # Check if there are open spaces and if fire spreads
+            random.shuffle(open_adjacent_spaces)
+            new_x, new_y = open_adjacent_spaces[0]  # Spread to the first shuffled open space
+            grid[new_x][new_y] = fire
+            return [(new_x, new_y)]
         return []
 
 def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions
 
     occupied_positions = set() 
-    workers = [Workers() for _ in range(number_of_workers)]
-    fires = [Fire() for _ in range(number_of_fires)]
+    workers = [Worker() for _ in range(1000)]
+    fires = [Fire() for _ in range(1)]
 
     escaped_workers = 0
     dead_workers = 0
@@ -198,23 +236,37 @@ def update():
     for nx, ny in new_fires:
         fires.append(Fire(nx, ny))
 
-def draw_grid(canvas):
+def draw_static_elements(canvas):
     for i in range(grid_size):
         for j in range(grid_size):
             if grid[i][j] == wall:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='black')
             elif grid[i][j] == exit:
                 canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='green')
+
+def draw_dynamic_elements(canvas):
+    # Clear previous dynamic objects
+    canvas.delete("dynamic")
+
+    # Redraw dynamic objects
     for worker in workers:
         color = 'red' if worker.panic else 'green'
-        canvas.create_oval(worker.y * cell_size, worker.x * cell_size, (worker.y + 1) * cell_size, (worker.x + 1) * cell_size, fill=color)
+        canvas.create_oval(
+            worker.y * cell_size, worker.x * cell_size,
+            (worker.y + 1) * cell_size, (worker.x + 1) * cell_size,
+            fill=color, tags="dynamic"
+        )
     for fire in fires:
-        canvas.create_rectangle(fire.y * cell_size, fire.x * cell_size, (fire.y + 1) * cell_size, (fire.x + 1) * cell_size, fill='orange')
+        canvas.create_rectangle(
+            fire.y * cell_size, fire.x * cell_size,
+            (fire.y + 1) * cell_size, (fire.x + 1) * cell_size,
+            fill='orange', tags="dynamic"
+        )
 
 def animate():
-    update()
-    canvas.delete("all")
-    draw_grid(canvas)
+    update()  # Assumes this function updates the positions of workers and fire locations
+    canvas.delete("dynamic")  # Delete only dynamic objects
+    draw_dynamic_elements(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
@@ -225,7 +277,8 @@ def run_continuous():
     global step_count
     update()
     canvas.delete("all")
-    draw_grid(canvas)
+    draw_static_elements(canvas)
+    draw_dynamic_elements(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
     step_count += 1
@@ -237,7 +290,8 @@ def run_step():
     global step_count
     update()
     canvas.delete("all")
-    draw_grid(canvas)
+    draw_static_elements(canvas)
+    draw_dynamic_elements(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
     step_count += 1
@@ -263,5 +317,5 @@ step_button.pack()
 
 step_label = tk.Label(root, text="Step: 0")
 step_label.pack()
-
+draw_static_elements(canvas)
 root.mainloop()
