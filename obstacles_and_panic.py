@@ -31,7 +31,7 @@ class Worker:
 
         # Initialise their path and panic state
         self.path_to_exit = None
-        self.panic = 1 if random.random() < 0.6 else 0  # Initial panic state
+        self.panic = 1 if random.random() < 0.3 else 0  # Initial panic state
         self.stationary_time = 0  # Time for which the worker has been stationary
 
     def worker_update(self):
