@@ -21,7 +21,7 @@ class FireWarden:
                 occupied_positions.add((self.x, self.y))
                 break
         self.path_to_exit = None
-        self.panic = 1 if random.random() < 0.3 else 0  # Initial panic state
+        self.panic = 1 if random.random() < 0.4 else 0  # Initial panic state
 
     def move(self):
         global escaped_wardens, dead_wardens, occupied_positions
@@ -152,7 +152,7 @@ def initialise():
     global fire_wardens, fires, escaped_wardens, dead_wardens, occupied_positions
 
     occupied_positions = set() 
-    fire_wardens = [FireWarden() for _ in range(100)]
+    fire_wardens = [FireWarden() for _ in range(1000)]
     fires = [Fire() for _ in range(1)]
 
     escaped_wardens = 0
