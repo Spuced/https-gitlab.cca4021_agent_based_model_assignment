@@ -55,11 +55,6 @@ class Panicker:
                         clear_path = False
                         break
                 if clear_path:
-<<<<<<< HEAD
-                    potential_moves = [(dx, 0), (0, dy)]
-                break
-            
-=======
                     self.x, self.y = exit_x, exit_y
                     if grid[exit_x][exit_y] == exit:
                         escaped_panickers += 1
@@ -98,7 +93,6 @@ class Panicker:
         
         # Move randomly
         potential_moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
->>>>>>> refs/remotes/origin/main
         random.shuffle(potential_moves)
         for move_x, move_y in potential_moves:
             new_x, new_y = self.x + move_x, self.y + move_y
