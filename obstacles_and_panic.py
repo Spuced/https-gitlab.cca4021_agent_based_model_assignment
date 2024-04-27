@@ -1,32 +1,31 @@
 import tkinter as tk
-import tkinter as ttk
 import random
 from collections import deque
 from create_office import layout
+import matplotlib.pyplot as plt
 
-# Simulation Properties
+# Default Properties
 open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 
-# Initialize the application
+# A GUI for simulation parameters
 app = tk.Tk()
-app.title("Simulation Parameters")
+app.title("Simulation Parameters (Close After Submitting)")
 
 # Variables initialization with Tkinter
 cell_size_var = tk.IntVar(value=8)
 desks_var = tk.BooleanVar(value=True)
 door_width_var = tk.IntVar(value=4)
-exit_locations_var = tk.StringVar(value="top, bottom")
+exit_locations_var = tk.StringVar(value="top, bottom, left, right")
 panic_percent_var = tk.DoubleVar(value=0.3)
 steps_to_check_var = tk.IntVar(value=15)
 patience_var = tk.IntVar(value=10)
 num_workers_var = tk.IntVar(value=1000)
 num_fires_var = tk.IntVar(value=1)
-fire_x_var = tk.IntVar(value=random.randint(1, 48))  # Assuming grid_size of 50 for example
-fire_y_var = tk.IntVar(value=random.randint(1, 48))
+fire_x_var = tk.IntVar(value=random.randint(1, 98))
+fire_y_var = tk.IntVar(value=random.randint(1, 98))
 fire_spread_var = tk.DoubleVar(value=0.5)
 
-# Submit function to handle the event
 def submit():
 
     global cell_size, desks, door_width, exit_locations, panic_percent, steps_to_check, patience, num_workers, num_fires, fire_x, fire_y, fire_spread
@@ -44,7 +43,6 @@ def submit():
     fire_y = fire_y_var.get()
     fire_spread = fire_spread_var.get()
 
-    # Now you can use these values for further processing or simulation
     print("Parameters Set:")
     print(f"Cell Size: {cell_size}")
     print(f"Desks: {desks}")
@@ -101,6 +99,7 @@ tk.Button(app, text="Submit", command=submit).grid(row=12, columnspan=2)
 app.mainloop()
 
 
+# Create the office layout
 grid = layout(desks=desks, door_width=door_width, exit_locations=exit_locations)
 
 # Mark the exits
@@ -300,7 +299,7 @@ class Fire:
 
 # Create the two agent types
 def initialise():
-    global workers, fires, escaped_workers, dead_workers, occupied_positions
+    global workers, fires, escaped_workers, dead_workers, occupied_positions, escaped_data, panic_data
 
     occupied_positions = set() 
     workers = [Worker() for _ in range(num_workers)]
@@ -309,9 +308,12 @@ def initialise():
     escaped_workers = 0
     dead_workers = 0
 
+    escaped_data = []
+    panic_data = []
+
 # Update the two agent types
 def update():
-    global workers, fires
+    global workers, fires, escaped_data, panic_data
     workers = [worker for worker in workers if not worker.worker_update()]
 
     new_fires = []
@@ -319,6 +321,10 @@ def update():
         new_fires.extend(fire.spread())
     for new_x, new_y in new_fires:
         fires.append(Fire(new_x, new_y))
+
+    # Record data for plotting
+    escaped_data.append(escaped_workers)
+    panic_data.append(sum(worker.panic for worker in workers))
 
 def draw_grid(canvas):
     for i in range(grid_size):
@@ -365,6 +371,17 @@ def run_step():
     step_count += 1
     step_label.config(text="Step: " + str(step_count))
 
+
+# After the simulation completes, plot the data
+def plot_data():
+    plt.plot(escaped_data, label='Escaped Workers')
+    plt.plot(panic_data, label='Panic Level')
+    plt.xlabel('Time Step')
+    plt.ylabel('Count')
+    plt.title('Simulation Results')
+    plt.legend()
+    plt.show()
+
 # Tkinter setup
 initialise()
 root = tk.Tk()
@@ -386,5 +403,9 @@ step_button.pack()
 
 step_label = tk.Label(root, text="Step: 0")
 step_label.pack()
+
+# Add a button to trigger plotting
+plot_button = tk.Button(root, text="Plot Data", command=plot_data)
+plot_button.pack()
 
 root.mainloop()
