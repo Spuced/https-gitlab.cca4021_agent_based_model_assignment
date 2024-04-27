@@ -52,9 +52,9 @@ class Workers:
         if not self.path_to_exit or self.is_path_blocked(self.path_to_exit, steps_to_check):
             self.path_to_exit = self.find_path_to_exit()
 
-        # # Make them calm if they see the exit
-        # if self.should_change_panic():
-        #     self.panic = 1 - self.panic  # Change panic state
+        # Make them calm if they see the exit
+        if self.should_change_panic():
+            self.panic = 1 - self.panic  # Change panic state
 
         # Check distance to exit and change panic state accordingly
         if self.distance_to_exit() <= vision:
@@ -214,22 +214,29 @@ def animate():
     dead_label.config(text="Workers Died: " + str(dead_workers))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
 
+step_count = 0
+
 def run_continuous():
+    global step_count
     update()
     canvas.delete("all")
     draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
+    step_count += 1
+    step_label.config(text="Step: " + str(step_count))
     if workers:
         root.after(50, run_continuous)
 
 def run_step():
+    global step_count
     update()
     canvas.delete("all")
     draw_grid(canvas)
     worker_label.config(text="Workers Escaped: " + str(escaped_workers))
     dead_label.config(text="Workers Died: " + str(dead_workers))
-
+    step_count += 1
+    step_label.config(text="Step: " + str(step_count))
 # Tkinter setup
 initialise()
 root = tk.Tk()
@@ -248,5 +255,8 @@ continuous_button.pack()
 
 step_button = tk.Button(root, text="Step", command=run_step)
 step_button.pack()
+
+step_label = tk.Label(root, text="Step: 0")
+step_label.pack()
 
 root.mainloop()
