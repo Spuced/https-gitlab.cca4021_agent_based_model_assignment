@@ -3,14 +3,23 @@ import random
 from collections import deque
 from create_office import layout
 import math
+import numpy as np
 
 # Simulation Properties
 open_space, wall, exit, fire = 0, 1, 2, 3
 grid_size = 100
 cell_size = 8  # Size of each cell in pixels
 cell_size = 8  # Adjust the size of each cell
+center_of_mass_radius = 10
 
 grid = layout()
+
+
+exits = []
+for i in range(grid_size):
+    for j in range(grid_size):
+        if grid[i][j] == exit:
+            exits.append([i, j])
 
 class Workers:
 
@@ -48,7 +57,7 @@ class Workers:
 
         # They shold move randomly if panicked
         if self.panic:
-            self.move_randomly()
+            self.swarm(workers)
 
         # If calm move along the path to the exit
         else:
@@ -68,6 +77,22 @@ class Workers:
                         occupied_positions.remove((self.x, self.y))
                         return True
         return False
+    
+    def calculate_local_center_of_mass(self, workers):
+        total_mass = 1  # Initialize with own position
+        center_x = self.x
+        center_y = self.y
+
+        for worker in workers:
+            if abs(worker.x - self.x) <= center_of_mass_radius and abs(worker.y - self.y) <= center_of_mass_radius:
+                total_mass += 1
+                center_x += worker.x
+                center_y += worker.y
+
+        if total_mass > 1:  # Avoid division by zero
+            return center_x / total_mass, center_y / total_mass
+        else:
+            return self.x, self.y
 
     def should_change_panic(self):
         nearby_agents = self.get_nearby_agents()
@@ -92,18 +117,9 @@ class Workers:
             return True
 
     def distance_to_exit(self):
-        exits = self.find_exit_coordinates()
         dists = [math.sqrt((exit_x - self.x)**2 + (exit_y - self.y)**2) for exit_x, exit_y in exits]
         min_dist = min(dists)
         return min_dist
-
-    def find_exit_coordinates(self):
-        exits = []
-        for i in range(grid_size):
-            for j in range(grid_size):
-                if grid[i][j] == exit:
-                    exits.append([i, j])
-        return exits
 
     def move_randomly(self):
         possible_moves = [(self.x + dx, self.y + dy) for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]]
@@ -114,6 +130,18 @@ class Workers:
                 self.x, self.y = new_x, new_y
                 occupied_positions.add((self.x, self.y))
                 break
+
+    def swarm(self, workers):
+            center_x, center_y = self.calculate_local_center_of_mass(workers)
+            move_x = np.sign(center_x - self.x)
+            move_y = np.sign(center_y - self.y)
+            new_x = int(self.x + move_x)
+            new_y = int(self.y + move_y)
+            if 0 <= new_x < grid_size and 0 <= new_y < grid_size and grid[new_x][new_y] == open_space and (new_x, new_y) not in occupied_positions:
+                occupied_positions.remove((self.x, self.y))
+                self.x = new_x
+                self.y = new_y
+                occupied_positions.add((self.x, self.y))
 
     # Check up to n steps in the path for fire
     def is_path_blocked(self, path, n):
@@ -172,7 +200,7 @@ def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions
 
     occupied_positions = set() 
-    workers = [Workers() for _ in range(1000)]
+    workers = [Workers() for _ in range(400)]
     fires = [Fire() for _ in range(1)]
 
     escaped_workers = 0
