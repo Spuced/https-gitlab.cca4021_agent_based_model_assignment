@@ -44,14 +44,6 @@ class Worker:
         if self.die():
             return True
         
-        # Make them take on the panic state of their neighbours
-        if self.should_change_panic():
-            self.panic = 1 - self.panic  # Change panic state
-
-        # Check distance to exit and change panic state accordingly
-        if self.distance_to_exit() <= 5:
-            self.panic = 0  # Set panic state to calm if exit is within 5 units
-        
         # If fire blocks the next n steps
         # Or if they have been stationary for n inerations they should calulate a new path
         steps_to_check = 15
@@ -66,6 +58,14 @@ class Worker:
             if len(self.path_to_exit) == 0:
                 self.panic = 1
 
+        # Make them take on the panic state of their neighbours
+        if self.should_change_panic():
+            self.panic = 1 - self.panic  # Change panic state
+
+        # Check distance to exit and change panic state accordingly
+        if self.distance_to_exit() <= 5:
+            self.panic = 0  # Set panic state to calm if exit is within 5 units
+
         # They shold move randomly if panicked
         if self.panic:
             self.move_randomly()
@@ -77,7 +77,7 @@ class Worker:
 
                 # If it is free move them along their path
                 if (next_x, next_y) not in occupied_positions:
-                    self.path_to_exit.pop(0)  # Remove the position as we are about to move there
+                    self.path_to_exit.pop(0)  # Remove the position as we they about to move there
                     occupied_positions.remove((self.x, self.y))
                     self.x, self.y = next_x, next_y
                     occupied_positions.add((self.x, self.y))
@@ -206,77 +206,3 @@ class Fire:
             grid[new_x][new_y] = fire
             return [(new_x, new_y)]
         return []
-
-def initialise():
-    global workers, fires, escaped_workers, dead_workers, occupied_positions
-
-    occupied_positions = set() 
-    workers = [Worker() for _ in range(1000)]
-    fires = [Fire() for _ in range(1)]
-
-    escaped_workers = 0
-    dead_workers = 0
-
-def update():
-    global workers, fires
-    workers = [worker for worker in workers if not worker.worker_update()]
-
-    new_fires = []
-    for fire in fires:
-        new_fires.extend(fire.spread())
-    for nx, ny in new_fires:
-        fires.append(Fire(nx, ny))
-
-def draw_static_elements(canvas):
-    for i in range(grid_size):
-        for j in range(grid_size):
-            if grid[i][j] == wall:
-                canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='black')
-            elif grid[i][j] == exit:
-                canvas.create_rectangle(j * cell_size, i * cell_size, (j + 1) * cell_size, (i + 1) * cell_size, fill='green')
-
-def draw_dynamic_elements(canvas):
-    # Clear previous dynamic objects
-    canvas.delete("dynamic")
-
-    # Redraw dynamic objects
-    for worker in workers:
-        color = 'red' if worker.panic else 'green'
-        canvas.create_oval(
-            worker.y * cell_size, worker.x * cell_size,
-            (worker.y + 1) * cell_size, (worker.x + 1) * cell_size,
-            fill=color, tags="dynamic"
-        )
-    for fire in fires:
-        canvas.create_rectangle(
-            fire.y * cell_size, fire.x * cell_size,
-            (fire.y + 1) * cell_size, (fire.x + 1) * cell_size,
-            fill='orange', tags="dynamic"
-        )
-
-def animate():
-    update()  # Assumes this function updates the positions of workers and fire locations
-    canvas.delete("dynamic")  # Delete only dynamic objects
-    draw_dynamic_elements(canvas)
-    worker_label.config(text="Workers Escaped: " + str(escaped_workers))
-    dead_label.config(text="Workers Died: " + str(dead_workers))
-    canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
-
-# Tkinter setup
-initialise()
-root = tk.Tk()
-root.title("Panic Simulation")
-canvas = tk.Canvas(root, width=grid_size * cell_size, height=grid_size * cell_size)
-canvas.pack()
-
-worker_label = tk.Label(root, text="Workers Escaped: 0")
-worker_label.pack()
-
-dead_label = tk.Label(root, text="Workers Died: 0")
-dead_label.pack()
-
-# Start animation
-draw_static_elements(canvas)
-animate()
-
-root.mainloop()
