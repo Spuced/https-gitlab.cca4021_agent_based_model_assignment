@@ -6,9 +6,13 @@ Ensuring the safe evacuation of individuals during emergencies, like fires, is c
 
 ## Simulation Overview
 Agents: The simulation comprises "Worker" agents representing individuals evacuating and "Fire" agents simulating the spreading fire hazard.
+
 Agent Behavior: Worker agents dynamically assess their surroundings, adjust their panic level, and make decisions regarding movement and escape routes based on factors like fire presence and nearby panic states.
+
+
 Fire Spread: The fire hazard expands over time, potentially blocking escape routes and endangering worker agents.
 Parameter Control: Various parameters, including building layout, panic behaviors, and fire properties, can be adjusted to explore different evacuation scenarios.
+
 Data Visualisation: Simulation results, such as the number of escaped workers, remaining panicked workers, and casualties, are visualized through graphs to analyze evacuation effectiveness.
 
 ## Requirement
