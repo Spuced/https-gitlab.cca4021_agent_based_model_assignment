@@ -291,7 +291,7 @@ class Fire:
     def __init__(self, x=None, y=None):
         if x is None or y is None:
             while True:
-                self.x, self.y = random.randint(1, grid_size - 2), random.randint(1, grid_size - 2)
+                self.x, self.y = fire_x, fire_y
                 if grid[self.x][self.y] == open_space:
                     grid[self.x][self.y] = fire
                     break
