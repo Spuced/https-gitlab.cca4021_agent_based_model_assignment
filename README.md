@@ -18,11 +18,18 @@ Python libraries:
 - seaborn
 
 ## Getting Started
-Set Parameters: Use the provided GUI interface to adjust parameters such as cell size, door width, panic thresholds, and fire spread characteristics.
-Submit: Click the "Submit" button to apply the configured settings.
-Run Simulation: Choose between continuous or step-by-step simulation execution using the provided buttons.
-Visualize Results: Analyze plotted results to understand the effectiveness of evacuation strategies under different conditions.
+- Ensure that python and the relevant above libraries are installed
+- Clone and run the following commands:
+'''
+git clone https://gitlab.computing.dcu.ie/bolgee25/ca4021_agent_based_model_assignment
+cd ca4021_agent_based_model_assignment
+python abm_evacuation_simulation.py
+'''
+- Use the provided GUI interface to adjust parameters such as cell size, door width, panic thresholds, and fire spread characteristics.
+- Click the "Submit" button to apply the configured settings.
+- Choose between continuous or step-by-step simulation execution using the provided buttons.
+- Analyze plotted results to understand the effectiveness of evacuation strategies under different conditions.
 
 [Pycxsimulator]() does not seem to work on linux and as a result we used tkinter as a GUI instead.
 
-[Example Simulation](/Images/Experiment_5.png)
+![Example Simulation](/Images/Experiment_5.png)
