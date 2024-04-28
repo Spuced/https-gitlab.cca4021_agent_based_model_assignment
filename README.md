@@ -30,6 +30,6 @@ python abm_evacuation_simulation.py
 - Choose between continuous or step-by-step simulation execution using the provided buttons.
 - Analyze plotted results to understand the effectiveness of evacuation strategies under different conditions.
 
-[Pycxsimulator]() does not seem to work on linux and as a result we used tkinter as a GUI instead.
+[Pycxsimulator](https://github.com/hsayama/PyCX) does not seem to work on linux and as a result we used tkinter as a GUI instead.
 
 ![Example Simulation](/Images/Experiment_5.png)
