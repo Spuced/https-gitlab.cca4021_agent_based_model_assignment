@@ -3,6 +3,7 @@ import random
 from collections import deque
 from create_office import layout
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Default Properties
 open_space, wall, exit, fire = 0, 1, 2, 3
@@ -26,7 +27,7 @@ num_workers_var = tk.IntVar(value=1000)
 num_fires_var = tk.IntVar(value=1)
 fire_x_var = tk.IntVar(value=random.randint(1, 98))
 fire_y_var = tk.IntVar(value=random.randint(1, 98))
-fire_spread_var = tk.DoubleVar(value=0.5)
+fire_spread_var = tk.DoubleVar(value=0.3)
 random_seed_var = tk.IntVar(value=1234)
 
 def submit():
@@ -344,9 +345,10 @@ def update():
         fires.append(Fire(new_x, new_y))
 
     # Record data for plotting
-    escaped_data.append(escaped_workers)
-    panic_data.append(sum(worker.panic for worker in workers))
-    deaths_data.append(dead_workers)
+    if len(workers):
+        escaped_data.append(escaped_workers / num_workers * 100)
+        panic_data.append(sum(worker.panic for worker in workers)/len(workers) * 100)
+        deaths_data.append(dead_workers / num_workers * 100)
     fire_data.append(len(fires))
 
 def draw_grid(canvas):
@@ -419,10 +421,11 @@ step_label.pack()
 root.mainloop()
 
 # Plot the results
-plt.plot(escaped_data, label='Escaped Workers')
-plt.plot(panic_data, label='Panic Level')
-plt.plot(deaths_data, label='Dead Workers')
-#plt.plot(fire_data, label='Fire Spread')
+sns.set_style('whitegrid')
+plt.plot(escaped_data, label='Escaped Workers %')
+plt.plot(panic_data, label='Remaining Workers Panicked %')
+plt.plot(deaths_data, label='Dead Workers %')
+# plt.plot(fire_data, label='Fire Spread')
 plt.xlabel('Time Step')
 plt.ylabel('Values')
 plt.title('Simulation Results')
