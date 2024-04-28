@@ -88,15 +88,15 @@ tk.Label(app, text="Fire X Coordinate").grid(row=11, column=0)
 tk.Entry(app, textvariable=fire_x_var).grid(row=11, column=1)
 
 tk.Label(app, text="Fire Y Coordinate").grid(row=12, column=0)
-tk.Entry(app, textvariable=fire_y_var).grid(row=13, column=1)
+tk.Entry(app, textvariable=fire_y_var).grid(row=12, column=1)
 
-tk.Label(app, text="Fire Spread").grid(row=14, column=0)
-tk.Entry(app, textvariable=fire_spread_var).grid(row=14, column=1)
+tk.Label(app, text="Fire Spread").grid(row=13, column=0)
+tk.Entry(app, textvariable=fire_spread_var).grid(row=13, column=1)
 
-tk.Label(app, text="Random Seed").grid(row=15, column=0)
-tk.Entry(app, textvariable=random_seed_var).grid(row=15, column=1)
+tk.Label(app, text="Random Seed").grid(row=14, column=0)
+tk.Entry(app, textvariable=random_seed_var).grid(row=14, column=1)
 
-tk.Button(app, text="Submit", command=submit).grid(row=16, columnspan=2)
+tk.Button(app, text="Submit", command=submit).grid(row=15, columnspan=2)
 
 app.mainloop()
 
