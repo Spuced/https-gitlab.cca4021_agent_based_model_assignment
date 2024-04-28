@@ -13,18 +13,19 @@ Data Visualization: Simulation results, such as the number of escaped workers, r
 
 ## Requirement
 Python libraries:
-- tkinter
-- matplotlib
-- seaborn
+- `tkinter`
+- `matplotlib`
+- `seaborn`
 
 ## Getting Started
 - Ensure that python and the relevant above libraries are installed
 - Clone and run the following commands:
-'''
+
+```
 git clone https://gitlab.computing.dcu.ie/bolgee25/ca4021_agent_based_model_assignment
 cd ca4021_agent_based_model_assignment
 python abm_evacuation_simulation.py
-'''
+```
 - Use the provided GUI interface to adjust parameters such as cell size, door width, panic thresholds, and fire spread characteristics.
 - Click the "Submit" button to apply the configured settings.
 - Choose between continuous or step-by-step simulation execution using the provided buttons.
