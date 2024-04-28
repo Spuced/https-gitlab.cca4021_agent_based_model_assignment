@@ -15,7 +15,7 @@ Parameter Control: Various parameters, including building layout, panic behavior
 
 Data Visualisation: Simulation results, such as the number of escaped workers, remaining panicked workers, and casualties, are visualized through graphs to analyze evacuation effectiveness.
 
-## Requirement
+## Requirements
 Python libraries:
 - `tkinter`
 - `matplotlib`
@@ -23,7 +23,7 @@ Python libraries:
 
 [Pycxsimulator](https://github.com/hsayama/PyCX) does not seem to work on linux and as a result we made our own GUI with tkinter.
 
-## Getting Started
+## Running the Simulation
 - Ensure that python and the relevant libraries are installed
 - Clone and run the following commands:
 
