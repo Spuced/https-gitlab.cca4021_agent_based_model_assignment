@@ -29,8 +29,7 @@ cd ca4021_agent_based_model_assignment
 python abm_evacuation_simulation.py
 ```
 - Use the provided GUI interface to adjust parameters such as cell size, door width, panic thresholds, and fire spread characteristics.
-- Click the "Submit" button to apply the configured settings.
+- Click the *Submit* button to apply the configured settings.
 - Choose between continuous or step-by-step simulation execution using the provided buttons.
-- Analyze plotted results to understand the effectiveness of evacuation strategies under different conditions.
 
 ![Example Simulation](/Images/Experiment_5.png)
