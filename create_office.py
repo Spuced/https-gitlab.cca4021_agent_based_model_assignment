@@ -27,7 +27,7 @@ def layout(desks=True, door_width=4, exit_locations=None):
                 grid[x][i] = open_space
                 grid[i][x] = open_space
 
-    # Adding desks based on the flag
+    # Adding desks based on the desks parameter
     if desks:
         for i in range(10, 35):
             for j in range(7, 38, 10):
