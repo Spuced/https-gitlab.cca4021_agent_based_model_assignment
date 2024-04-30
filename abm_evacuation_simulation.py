@@ -13,7 +13,7 @@ grid_size = 100
 app = tk.Tk()
 app.title("Simulation Parameters (Close After Submitting)")
 
-# Variables initialization with Tkinter
+# Default Parameters
 cell_size_var = tk.IntVar(value=8)
 desks_var = tk.BooleanVar(value=True)
 door_width_var = tk.IntVar(value=4)
@@ -29,6 +29,8 @@ fire_x_var = tk.IntVar(value=random.randint(1, 98))
 fire_y_var = tk.IntVar(value=random.randint(1, 98))
 fire_spread_var = tk.DoubleVar(value=0.3)
 random_seed_var = tk.IntVar(value=1234)
+
+# Input box for the parameters
 
 def submit():
 
@@ -173,7 +175,7 @@ class Worker:
 
                 # If it is free move them along their path
                 if (next_x, next_y) not in occupied_positions:
-                    self.path_to_exit.pop(0)  # Remove the position as we are about to move there
+                    self.path_to_exit.pop(0)  # Remove the position as they are about to move there
                     occupied_positions.remove((self.x, self.y))
                     self.x, self.y = next_x, next_y
                     occupied_positions.add((self.x, self.y))
@@ -202,14 +204,15 @@ class Worker:
         num_nearby = len(nearby_agents)
         panic_ratio = num_panicked / num_nearby
 
-        # Change staes based on the threshold
+        # Change states based on the threshold
         if self.panic and panic_ratio <= (1 - panic_change_threshold):
             return True  # Change from panic to calm if less than (1 - threshold) are panicked
         elif not self.panic and panic_ratio > panic_change_threshold:
             return True  # Change from calm to panic if more than threshold are panicked
 
         return False
-
+    
+    # Look at agents within 5 units
     def get_nearby_agents(self):
         nearby_agents = []
         for worker in workers:
@@ -225,7 +228,8 @@ class Worker:
             occupied_positions.remove((self.x, self.y))
             dead_workers += 1
             return True
-
+        
+    # Calculate the Manhattan Distance to the exit
     def distance_to_exit(self):
         dists = [abs(exit_x - self.x) + abs(exit_y - self.y) for exit_x, exit_y in exits]
         min_dist = min(dists)
@@ -242,7 +246,7 @@ class Worker:
                 occupied_positions.add((self.x, self.y))
                 break
 
-    # Check up to n steps in the path for fire
+    # Check next n steps in the path for fire
     def is_path_blocked(self, path, n):
         for x, y in path[:n]:
             if grid[x][y] == fire:
@@ -265,15 +269,16 @@ class Worker:
             # Explore all adjacent cells (up, down, left, right).
             for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
                 new_x, new_y = x + dx, y + dy
+
                 # Ensure the new position is within the grid bounds.
                 if 0 <= new_x < grid_size and 0 <= new_y < grid_size and not visited[new_x][new_y]:
+
                     # Check if the adjacent cell is an exit.
                     if grid[new_x][new_y] == exit:
                         # Return the path to this exit, appending the exit position to the current path.
                         return path + [(new_x, new_y)]
                     
                     # If the adjacent cell is open space, it's a valid cell to move to.
-                    #elif grid[nx][ny] == open_space:
                     elif grid[new_x][new_y] == open_space and (new_x, new_y) not in occupied_positions:
 
                         # Enqueue this cell along with the updated path.
@@ -317,7 +322,7 @@ class Fire:
             return [(new_x, new_y)]
         return []
 
-# Create the two agent types
+# Create the two agent types and lists for storing results
 def initialise():
     global workers, fires, escaped_workers, dead_workers, occupied_positions, escaped_data, panic_data, deaths_data, fire_data
 
@@ -351,6 +356,7 @@ def update():
         deaths_data.append(dead_workers / num_workers * 100)
     fire_data.append(len(fires))
 
+# Draw the grid with Tkinter
 def draw_grid(canvas):
     for i in range(grid_size):
         for j in range(grid_size):
@@ -364,6 +370,7 @@ def draw_grid(canvas):
     for fire in fires:
         canvas.create_rectangle(fire.y * cell_size, fire.x * cell_size, (fire.y + 1) * cell_size, (fire.x + 1) * cell_size, fill='orange')
 
+# Animate each iteration
 def animate():
     update()
     canvas.delete("all")
@@ -372,6 +379,8 @@ def animate():
     dead_label.config(text="Workers Died: " + str(dead_workers))
     canvas.after(50, animate)  # Adjust the animation speed by changing the delay time
 
+
+# Allow the simulation to run stepwise or continuously
 step_count = 0
 
 def run_continuous():
@@ -396,7 +405,7 @@ def run_step():
     step_count += 1
     step_label.config(text="Step: " + str(step_count))
 
-# Tkinter setup
+# Tkinter visualisation setup
 initialise()
 root = tk.Tk()
 root.title("Panic Simulation")
